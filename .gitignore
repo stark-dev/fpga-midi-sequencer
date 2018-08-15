@@ -1,0 +1,6 @@
+# quartus files
+*.sof
+
+# modelsim working dir
+work
+*.wlf
