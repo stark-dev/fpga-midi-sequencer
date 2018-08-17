@@ -358,12 +358,14 @@ begin
   end process;
 
 
-  p_parity_check: process(s_par_rg_val, s_par_bit)
+  p_parity_check: process(i_clk, s_par_rg_val, s_par_bit)
   begin
-    if g_parity_odd = false then
-      s_par_error <= s_par_bit xor s_par_rg_val;
-    else
-      s_par_error <= s_par_bit xor not(s_par_rg_val);
+    if i_clk'event and i_clk = '1' then
+      if g_parity_odd = false then
+        s_par_error <= s_par_bit xor s_par_rg_val;
+      else
+        s_par_error <= s_par_bit xor not(s_par_rg_val);
+      end if;
     end if;
   end process;
 
