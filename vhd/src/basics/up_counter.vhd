@@ -23,10 +23,12 @@ architecture BHV of UP_COUNTER is
 
 begin
 
-  count: process(i_clk)
+  count: process(i_reset_n, i_clk)
   begin
-    if i_clk'event and i_clk='1' then
-      if i_reset_n = '0' or s_tc_temp = '1' then
+    if i_reset_n = '0' then
+      s_q_temp <= to_unsigned(0, n);
+    elsif i_clk'event and i_clk='1' then
+      if s_tc_temp = '1' then
         s_q_temp <= to_unsigned(0, n);
       elsif i_en='1' then
         s_q_temp <= s_q_temp + 1;
