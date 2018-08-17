@@ -94,6 +94,8 @@ architecture RTL of UART_RX is
 
   -- uart
   signal s_uart_state   : t_uart_st;
+
+  signal s_uart_clk_e   : std_logic;
   signal s_uart_clk     : std_logic;
   signal s_uart_clk_n   : std_logic;
 
@@ -163,23 +165,25 @@ begin
 
   p_uart_clock: process(s_rx_cnt_rst, s_zero_cnt_evt, s_half_cnt_evt)
   begin
-    if s_rx_cnt_rst = '0' then
+    if s_uart_clk_e = '0' then
       s_uart_clk <= '0';
-    elsif s_zero_cnt_evt'event and s_zero_cnt_evt = '1' then
-      s_uart_clk <= '1';
-    elsif s_half_cnt_evt'event and s_half_cnt_evt = '1' then
-      s_uart_clk <= '0';
+    else
+      if s_zero_cnt_evt'event and s_zero_cnt_evt = '1' then
+        s_uart_clk <= '1';
+      elsif s_half_cnt_evt'event and s_half_cnt_evt = '1' then
+        s_uart_clk <= '0';
+      end if;
     end if;
   end process;
 
-  p_uart_fsm_state: process(i_uart_en, i_uart_rst_n, i_uart_in, s_uart_clk)
+  p_uart_fsm_state: process(i_uart_en, i_uart_rst_n, i_uart_in, s_rx_cnt_tc)
   begin
     if i_uart_rst_n = '0' then
       s_uart_state <= st_idle;
     elsif i_uart_en = '1' then
       if s_uart_state = st_idle and i_uart_in = '0' then -- start bit
         s_uart_state <= st_start;
-      elsif s_uart_clk'event and s_uart_clk = '1' then
+      elsif s_rx_cnt_tc'event and s_rx_cnt_tc = '1' then
         case s_uart_state is
           when st_start =>
             s_uart_state <= st_data;
@@ -220,6 +224,8 @@ begin
   begin
     case s_uart_state is
       when st_idle    =>
+        s_uart_clk_e <= '0';
+
         s_rx_cnt_en  <= '0';
         s_rx_cnt_rst <= '0';
 
@@ -234,7 +240,10 @@ begin
         s_par_rg_rst <= '0';
 
         s_data_end   <= '0';
+
       when st_start   =>
+        s_uart_clk_e <= '1';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -249,7 +258,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '0';
+
       when st_data    =>
+        s_uart_clk_e <= '1';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -264,7 +276,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '0';
+
       when st_parity =>
+        s_uart_clk_e <= '1';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -279,7 +294,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '0';
+
       when st_stop1   =>
+        s_uart_clk_e <= '1';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -294,7 +312,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '0';
+
       when st_stop2   =>
+        s_uart_clk_e <= '1';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -309,7 +330,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '0';
+
       when st_end     =>
+        s_uart_clk_e <= '0';
+
         s_rx_cnt_en  <= '1';
         s_rx_cnt_rst <= '1';
 
@@ -328,7 +352,10 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '1';
+        
       when others    =>
+        s_uart_clk_e <= '0';
+
         s_rx_cnt_en  <= '0';
         s_rx_cnt_rst <= '0';
 
@@ -358,14 +385,12 @@ begin
   end process;
 
 
-  p_parity_check: process(i_clk, s_par_rg_val, s_par_bit)
+  p_parity_check: process(s_par_rg_val, s_par_bit)
   begin
-    if i_clk'event and i_clk = '1' then
-      if g_parity_odd = false then
-        s_par_error <= s_par_bit xor s_par_rg_val;
-      else
-        s_par_error <= s_par_bit xor not(s_par_rg_val);
-      end if;
+    if g_parity_odd = false then
+      s_par_error <= s_par_check and (s_par_bit xor s_par_rg_val);
+    else
+      s_par_error <= s_par_check and (s_par_bit xnor s_par_rg_val);
     end if;
   end process;
 
@@ -374,6 +399,6 @@ begin
 
   o_uart_data   <= s_sr_data_out;
   o_uart_end    <= s_data_end;
-  o_uart_err    <= s_par_check and s_par_error;
+  o_uart_err    <= s_par_error;
 
 end architecture RTL;
