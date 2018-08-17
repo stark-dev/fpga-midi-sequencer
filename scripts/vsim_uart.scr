@@ -1,0 +1,8 @@
+source scripts/vcom_uart.scr
+
+vsim -t ps TB_UART_RX
+
+add wave *
+add wave DUT/*
+
+run 10 ns

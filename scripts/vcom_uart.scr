@@ -1,0 +1,4 @@
+vcom vhd/src/utils/*
+vcom vhd/src/basics/*
+vcom vhd/src/uart/uart-rx.vhd
+vcom vhd/tb/tb_uart-rx.vhd
