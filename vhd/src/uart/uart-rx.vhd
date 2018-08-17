@@ -163,7 +163,7 @@ begin
     end if;
   end process;
 
-  p_uart_clock: process(s_rx_cnt_rst, s_zero_cnt_evt, s_half_cnt_evt)
+  p_uart_clock: process(s_uart_clk_e, s_zero_cnt_evt, s_half_cnt_evt)
   begin
     if s_uart_clk_e = '0' then
       s_uart_clk <= '0';
@@ -183,7 +183,7 @@ begin
     elsif i_uart_en = '1' then
       if s_uart_state = st_idle and i_uart_in = '0' then -- start bit
         s_uart_state <= st_start;
-      elsif s_rx_cnt_tc'event and s_rx_cnt_tc = '1' then
+      elsif s_rx_cnt_tc'event and s_rx_cnt_tc = '0' then
         case s_uart_state is
           when st_start =>
             s_uart_state <= st_data;
@@ -352,7 +352,7 @@ begin
         s_par_rg_rst <= '1';
 
         s_data_end   <= '1';
-        
+
       when others    =>
         s_uart_clk_e <= '0';
 
