@@ -11,6 +11,7 @@ package UTILS_PKG is
   function up_int_log2 (X : positive) return natural;             -- log2 rounded to upper int
   function and_reduce(datain : std_logic_vector) return std_logic;
   function or_reduce(datain : std_logic_vector) return std_logic;
+  function xor_reduce(datain : std_logic_vector) return std_logic;
 
   -- custom types
   -- type irqCode is (
@@ -80,6 +81,18 @@ begin
   end loop;
   return res;
 end or_reduce;
+
+
+--------------------------------------------------------------------------------
+
+function xor_reduce(datain : std_logic_vector) return std_logic is
+  variable res : std_logic := '0';
+begin
+  for i in datain'range loop
+    res := res xor datain(i);
+  end loop;
+  return res;
+end xor_reduce;
 
 --------------------------------------------------------------------------------
 
