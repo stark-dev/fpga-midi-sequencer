@@ -10,8 +10,8 @@ port (
   i_clk         : in   std_logic;
   i_reset_n     : in   std_logic;
   i_load_en     : in   std_logic;
-  i_par_in      : in   std_logic;
-  o_par_out     : out  std_logic);
+  i_par_in      : in   std_logic_vector(N-1 downto 0);
+  o_par_out     : out  std_logic_vector(N-1 downto 0));
 end entity;
 
 architecture BHV of REGISTER_N is
