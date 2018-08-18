@@ -66,15 +66,11 @@ architecture RTL of UART_RX is
 --------------------------------------------------------------------------------
 -- signals
 --------------------------------------------------------------------------------
-
   -- rx bit counter
   signal s_rx_cnt_en        : std_logic;
   signal s_rx_cnt_rst       : std_logic;
   signal s_rx_cnt_tc        : std_logic;
   signal s_rx_cnt_out       : unsigned(up_int_log2(c_clock_divider)-1 downto 0);
-
-  signal s_zero_cnt_evt     : std_logic;
-  signal s_half_cnt_evt     : std_logic;
 
   -- data counter
   signal s_dt_cnt_en        : std_logic;
@@ -101,6 +97,7 @@ architecture RTL of UART_RX is
 
   signal s_data_end     : std_logic;
 
+  -- parity check
   signal s_par_check    : std_logic;
   signal s_par_error    : std_logic;
   signal s_par_bit      : std_logic;
@@ -145,33 +142,15 @@ begin
     o_par_out   => s_sr_data_out
   );
 
-  p_zero_cnt_evt: process(s_rx_cnt_out)
-  begin
-    if s_rx_cnt_out = to_unsigned(0, up_int_log2(c_clock_divider)) then
-      s_zero_cnt_evt <= '1';
-    else
-      s_zero_cnt_evt <= '0';
-    end if;
-  end process;
-
-  p_half_cnt_evt: process(s_rx_cnt_out)
-  begin
-    if s_rx_cnt_out = to_unsigned(c_half_period, up_int_log2(c_clock_divider)) then
-      s_half_cnt_evt <= '1';
-    else
-      s_half_cnt_evt <= '0';
-    end if;
-  end process;
-
-  p_uart_clock: process(s_uart_clk_e, s_zero_cnt_evt, s_half_cnt_evt)
+  p_uart_clock: process(s_uart_clk_e, s_rx_cnt_out)
   begin
     if s_uart_clk_e = '0' then
       s_uart_clk <= '0';
     else
-      if s_zero_cnt_evt'event and s_zero_cnt_evt = '1' then
-        s_uart_clk <= '1';
-      elsif s_half_cnt_evt'event and s_half_cnt_evt = '1' then
+      if s_rx_cnt_out > c_half_period then
         s_uart_clk <= '0';
+      else
+        s_uart_clk <= '1';
       end if;
     end if;
   end process;
@@ -284,7 +263,7 @@ begin
         s_rx_cnt_rst <= '1';
 
         s_dt_cnt_en  <= '0';
-        s_dt_cnt_rst <= '1';
+        s_dt_cnt_rst <= '0';
 
         s_sr_rst     <= '1';
         s_sr_sh_en   <= '0';
