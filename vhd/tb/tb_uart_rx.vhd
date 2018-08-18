@@ -17,7 +17,7 @@ architecture TEST of TB_UART_RX is
       g_databits    : natural := 8;
       g_parity      : boolean := false;
       g_parity_odd  : boolean := false;
-      g_stop_bit    : integer := 1
+      g_stop_bits   : integer := 1
     );
     port (
       i_uart_en     : in    std_logic;  -- UART enable
