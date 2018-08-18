@@ -1,5 +1,3 @@
-vcom vhd/src/utils/*
-vcom vhd/src/basics/*
 vcom vhd/src/uart/uart_rx.vhd
 vcom vhd/src/uart/uart_tx.vhd
 vcom vhd/tb/tb_uart_rx.vhd
