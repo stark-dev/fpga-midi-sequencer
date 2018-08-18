@@ -17,7 +17,7 @@ architecture TEST of TB_UART_RX is
       g_databits    : natural := 8;
       g_parity      : boolean := false;
       g_parity_odd  : boolean := false;
-      g_stop_bits   : integer := 1
+      g_stop_bit    : integer := 1
     );
     port (
       i_uart_en     : in    std_logic;  -- UART enable
@@ -95,7 +95,7 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '1';  -- data 0
+    s_uart_in    <= '0';  -- data 0
     wait for c_uart_period;
 
     s_uart_en    <= '1';
@@ -110,12 +110,12 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '1';  -- data 3
+    s_uart_in    <= '0';  -- data 3
     wait for c_uart_period;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '0';  -- data 4
+    s_uart_in    <= '1';  -- data 4
     wait for c_uart_period;
 
     s_uart_en    <= '1';
@@ -130,7 +130,7 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '0';  -- data 7
+    s_uart_in    <= '1';  -- data 7
     wait for c_uart_period;
 
     s_uart_en    <= '1';
@@ -164,12 +164,12 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '0';  -- data 0
+    s_uart_in    <= '1';  -- data 0
     wait for c_uart_period;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '0';  -- data 1
+    s_uart_in    <= '1';  -- data 1
     wait for c_uart_period;
 
     s_uart_en    <= '1';
@@ -179,12 +179,12 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '0';  -- data 3
+    s_uart_in    <= '1';  -- data 3
     wait for c_uart_period;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '1';  -- data 4
+    s_uart_in    <= '0';  -- data 4
     wait for c_uart_period;
 
     s_uart_en    <= '1';
@@ -194,12 +194,12 @@ begin
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '1';  -- data 6
+    s_uart_in    <= '0';  -- data 6
     wait for c_uart_period;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
-    s_uart_in    <= '1';  -- data 7
+    s_uart_in    <= '0';  -- data 7
     wait for c_uart_period;
 
     s_uart_en    <= '1';

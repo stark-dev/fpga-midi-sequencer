@@ -41,7 +41,7 @@ architecture RTL of UART_RX is
       o_tc        : out  std_logic);
   end component;
 
-  component SHIFT_REGISTER is
+  component R_SHIFT_REGISTER is
   generic (
     N           : integer := 16);
   port (
@@ -130,7 +130,7 @@ begin
     o_tc        => s_dt_cnt_tc
   );
 
-  uart_data_sr : SHIFT_REGISTER
+  uart_data_sr : R_SHIFT_REGISTER
   generic map (
     g_databits
   )
