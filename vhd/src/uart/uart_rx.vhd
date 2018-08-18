@@ -55,7 +55,7 @@ architecture RTL of UART_RX is
 --------------------------------------------------------------------------------
 -- types
 --------------------------------------------------------------------------------
-  type t_uart_st is (st_idle, st_start, st_data, st_parity, st_stop1, st_stop2, st_end);
+  type t_uart_st is (st_idle, st_start, st_data, st_parity, st_stop, st_end);
 
 --------------------------------------------------------------------------------
 -- constants
@@ -173,22 +173,16 @@ begin
               elsif g_stop_bits = 0 then
                 s_uart_state <= st_end;
               else
-                s_uart_state <= st_stop1;
+                s_uart_state <= st_stop;
               end if;
             end if;
           when st_parity =>
             if g_stop_bits = 0 then
               s_uart_state <= st_end;
             else
-              s_uart_state <= st_stop1;
+              s_uart_state <= st_stop;
             end if;
-          when st_stop1 =>
-            if g_stop_bits = 2 then
-              s_uart_state <= st_stop2;
-            else
-              s_uart_state <= st_end;
-            end if;
-          when st_stop2 =>
+          when st_stop =>
             s_uart_state <= st_end;
           when st_end =>
             s_uart_state <= st_idle;
@@ -202,7 +196,7 @@ begin
   p_uart_ctrl: process(s_uart_state)
   begin
     case s_uart_state is
-      when st_idle    =>
+      when st_idle   =>
         s_uart_clk_e <= '0';
 
         s_rx_cnt_en  <= '0';
@@ -220,7 +214,7 @@ begin
 
         s_data_end   <= '0';
 
-      when st_start   =>
+      when st_start  =>
         s_uart_clk_e <= '1';
 
         s_rx_cnt_en  <= '1';
@@ -238,7 +232,7 @@ begin
 
         s_data_end   <= '0';
 
-      when st_data    =>
+      when st_data   =>
         s_uart_clk_e <= '1';
 
         s_rx_cnt_en  <= '1';
@@ -274,7 +268,7 @@ begin
 
         s_data_end   <= '0';
 
-      when st_stop1   =>
+      when st_stop   =>
         s_uart_clk_e <= '1';
 
         s_rx_cnt_en  <= '1';
@@ -292,25 +286,7 @@ begin
 
         s_data_end   <= '0';
 
-      when st_stop2   =>
-        s_uart_clk_e <= '1';
-
-        s_rx_cnt_en  <= '1';
-        s_rx_cnt_rst <= '1';
-
-        s_dt_cnt_en  <= '0';
-        s_dt_cnt_rst <= '0';
-
-        s_sr_rst     <= '1';
-        s_sr_sh_en   <= '0';
-
-        s_par_check  <= '0';
-        s_par_rg_en  <= '0';
-        s_par_rg_rst <= '1';
-
-        s_data_end   <= '0';
-
-      when st_end     =>
+      when st_end    =>
         s_uart_clk_e <= '0';
 
         s_rx_cnt_en  <= '1';
