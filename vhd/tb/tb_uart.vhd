@@ -61,9 +61,18 @@ architecture TEST of TB_UART is
     o_par_out     : out  std_logic_vector(N-1 downto 0));
   end component;
 
-  constant c_clock_period : time := 10 ns;
-  constant c_uart_period  : time := 8681 ns;
+  constant c_ext_clock    : integer := 50000000;
+  constant c_baud_rate    : integer := 115200;
   constant c_databits     : integer := 8;
+  constant c_parity       : boolean := true;
+  constant c_parity_odd   : boolean := false;
+  constant c_stop_bits    : integer := 1;
+
+  constant c_clock        : integer := 1000000000/(2*c_ext_clock);
+  constant c_uart         : integer := 1000000000/c_baud_rate;
+
+  constant c_clock_half_p : time := c_clock * 1 ns;
+  constant c_uart_period  : time := c_uart * 1 ns;
 
   -- uart common
   signal s_clk          : std_logic;
@@ -88,12 +97,12 @@ begin
 
   TX: UART_TX
   generic map (
-    g_ext_clock  => 50000000,
-    g_baud_rate  => 115200,
+    g_ext_clock  => c_ext_clock,
+    g_baud_rate  => c_baud_rate,
     g_databits   => c_databits,
-    g_parity     => true,
-    g_parity_odd => false,
-    g_stop_bits  => 1
+    g_parity     => c_parity,
+    g_parity_odd => c_parity_odd,
+    g_stop_bits  => c_stop_bits
   )
   port map (
     i_uart_en     => s_uart_en,
@@ -107,12 +116,12 @@ begin
 
   RX: UART_RX
   generic map (
-    g_ext_clock  => 50000000,
-    g_baud_rate  => 115200,
+    g_ext_clock  => c_ext_clock,
+    g_baud_rate  => c_baud_rate,
     g_databits   => c_databits,
-    g_parity     => true,
-    g_parity_odd => false,
-    g_stop_bits  => 1
+    g_parity     => c_parity,
+    g_parity_odd => c_parity_odd,
+    g_stop_bits  => c_stop_bits
   )
   port map (
     i_uart_en     => s_uart_en,
@@ -139,9 +148,9 @@ begin
   clock_gen : process
   begin
     s_clk <= '0';
-    wait for c_clock_period;
+    wait for c_clock_half_p;
     s_clk <= '1';
-    wait for c_clock_period;
+    wait for c_clock_half_p;
   end process;
 
   input_gen: process
@@ -168,7 +177,7 @@ begin
     s_uart_rst_n <= '1';
     s_tx_load_en <= '1';
     s_tx_data    <= "00000000";
-    wait for 2*c_clock_period;
+    wait for 2*c_clock_half_p;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
@@ -180,7 +189,7 @@ begin
     s_uart_rst_n <= '1';
     s_tx_load_en <= '1';
     s_tx_data    <= "11010010";
-    wait for 2*c_clock_period;
+    wait for 2*c_clock_half_p;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
@@ -192,7 +201,7 @@ begin
     s_uart_rst_n <= '1';
     s_tx_load_en <= '1';
     s_tx_data    <= "00101111";
-    wait for 2*c_clock_period;
+    wait for 2*c_clock_half_p;
 
     s_uart_en    <= '1';
     s_uart_rst_n <= '1';
