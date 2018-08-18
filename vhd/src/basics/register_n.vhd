@@ -3,7 +3,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity REGISTER is
+entity REGISTER_N is
 generic (
   N           : integer := 16);
 port (
@@ -14,7 +14,7 @@ port (
   o_par_out     : out  std_logic);
 end entity;
 
-architecture BHV of REGISTER is
+architecture BHV of REGISTER_N is
 
 signal s_data : std_logic_vector(N-1 downto 0);
 
