@@ -1,0 +1,7 @@
+source scripts/vcom_uart.scr
+
+vsim -t ps TB_UART
+
+add wave *
+
+run 10 ns
