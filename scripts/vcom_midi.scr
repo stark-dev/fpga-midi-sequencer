@@ -1,0 +1,3 @@
+vcom vhd/src/midi/midi_cmd_lut.vhd
+vcom vhd/src/midi/midi_ch_mode_lut.vhd
+vcom vhd/src/midi/midi_event_filter.vhd
