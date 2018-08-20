@@ -22,8 +22,8 @@ architecture BHV of MIDI_EVT_FILTER is
 --------------------------------------------------------------------------------
 -- types
 --------------------------------------------------------------------------------
-  type t_data_fsm is (st_idle, st_sample, st_data);
-  type t_midi_fsm is (st_reset, st_status, st_data1, st_data2);
+  type t_data_fsm is (st_reset, st_idle, st_sample, st_data);
+  type t_midi_fsm is (st_status, st_data1, st_data2);
 
 --------------------------------------------------------------------------------
 -- constants
@@ -33,8 +33,14 @@ architecture BHV of MIDI_EVT_FILTER is
 -- signals
 --------------------------------------------------------------------------------
   -- fsm
-  signal s_fsm_state : t_data_fsm;  -- main fsm
-  signal s_msg_state : t_midi_fsm;  -- message fsm
+  signal s_fsm_state  : t_data_fsm;  -- main fsm
+  signal s_msg_state  : t_midi_fsm;  -- message fsm
+
+  signal s_upd_state  : std_logic;   -- update message fsm state
+
+  -- new data flag
+  signal s_data_flag  : std_logic;
+  signal s_rst_flag   : std_logic;
 
   -- message data register
   signal s_data_en      : std_logic;
@@ -117,14 +123,20 @@ begin
   s_ctrl_id   <= s_data_out(MIDI_DATA);
   s_ctrl_val  <= s_data_out(MIDI_DATA);
 
+  s_upd_state <= '1' when s_fsm_state = st_data else '0';
+
+  s_rst_flag  <= i_reset_n and not(s_upd_state);
+
   p_data_fsm_state: process(i_clk, i_reset_n)
   begin
     if i_reset_n = '0' then
-      s_fsm_state <= st_idle;
+      s_fsm_state <= st_reset;
     elsif i_clk'event and i_clk = '1' then
       case s_fsm_state is
+        when st_reset   =>
+          s_fsm_state <= st_idle;
         when st_idle    =>
-          if i_new_data = '1' then
+          if s_data_flag = '1' then
             s_fsm_state <= st_sample;
           else
             s_fsm_state <= st_idle;
@@ -142,78 +154,95 @@ begin
   p_data_fsm_control: process(s_fsm_state)
   begin
     case s_fsm_state is
+      when st_reset   =>
+        s_data_rst      <= '0';
+        s_data_en       <= '0';
+
+        s_midi_cmd_rst  <= '0';
+        s_midi_cmd_en   <= '0';
+
       when st_idle    =>
-        s_data_rst    <= '0';
-        s_data_en     <= '0';
+        s_data_rst      <= '1';
+        s_data_en       <= '0';
+
+        s_midi_cmd_rst  <= '1';
+        s_midi_cmd_en   <= '0';
+
       when st_sample  =>
-        s_data_rst    <= '1';
-        s_data_en     <= '1';
+        s_data_rst      <= '1';
+        s_data_en       <= '1';
+
+        s_midi_cmd_rst  <= '1';
+        if s_msg_state = st_status then
+          s_midi_cmd_en   <= '1';
+        else
+          s_midi_cmd_en   <= '0';
+        end if;
+
       when st_data    =>
-        s_data_rst    <= '1';
-        s_data_en     <= '0';
+        s_data_rst      <= '1';
+        s_data_en       <= '0';
+
+        s_midi_cmd_rst  <= '1';
+        s_midi_cmd_en   <= '0';
+
       when others     =>
-        s_data_rst    <= '0';
-        s_data_en     <= '0';
+        s_data_rst      <= '0';
+        s_data_en       <= '0';
+
+        s_midi_cmd_rst  <= '0';
+        s_midi_cmd_en   <= '0';
     end case;
   end process;
 
-  p_midi_fsm_state: process(i_clk, i_reset_n)
+  p_midi_fsm_state: process(i_reset_n, s_upd_state)
   begin
     if i_reset_n = '0' then
-      s_msg_state <= st_reset;
-    elsif i_clk'event and i_clk = '1' then
-      if s_msg_state = st_reset then
-        s_msg_state <= st_status;
-      elsif s_fsm_state = st_sample then
-        case s_msg_state is
-          when st_status  =>
-            case s_midi_cmd_in is
-              when midi_note_off  =>
-              when midi_note_on   =>
-              when midi_ctrl_ch   =>
-              when midi_prg_ch    =>
-                s_msg_state <= st_data1;
-              when others         =>
-                s_msg_state <= st_status;
-            end case;
-          when st_data1   =>
-            case s_midi_cmd_r is
-              when midi_note_off  =>
-              when midi_note_on   =>
-              when midi_ctrl_ch   =>
-                s_msg_state <= st_data2;
-              when midi_prg_ch    =>
-                s_msg_state <= st_status;
-              when others         =>
-                s_msg_state <= st_status;
-            end case;
-          when st_data2   =>
-            s_msg_state <= st_status;
-          when others     =>
-            s_msg_state <= st_status;
-        end case;
-      end if;
+      s_msg_state <= st_status;
+    elsif s_upd_state'event and s_upd_state = '1' then
+      case s_msg_state is
+        when st_status  =>
+          case s_midi_cmd_r is
+            when midi_note_off  =>
+              s_msg_state <= st_data1;
+            when midi_note_on   =>
+              s_msg_state <= st_data1;
+            when midi_ctrl_ch   =>
+              s_msg_state <= st_data1;
+            when midi_prg_ch    =>
+              s_msg_state <= st_data1;
+            when others         =>
+              s_msg_state <= st_status;
+          end case;
+        when st_data1   =>
+          case s_midi_cmd_r is
+            when midi_note_off  =>
+              s_msg_state <= st_data2;
+            when midi_note_on   =>
+              s_msg_state <= st_data2;
+            when midi_ctrl_ch   =>
+              s_msg_state <= st_data2;
+            when midi_prg_ch    =>
+              s_msg_state <= st_status;
+            when others         =>
+              s_msg_state <= st_status;
+          end case;
+        when st_data2   =>
+          s_msg_state <= st_status;
+        when others     =>
+          s_msg_state <= st_status;
+      end case;
     end if;
   end process;
 
   p_midi_fsm_control: process(s_msg_state)
   begin
     case s_msg_state is
-      when st_reset   =>
-        s_midi_cmd_rst  <= '0';
-        s_midi_cmd_en   <= '0';
       when st_status  =>
-        s_midi_cmd_rst  <= '1';
-        s_midi_cmd_en   <= '1';
       when st_data1   =>
-        s_midi_cmd_rst  <= '1';
-        s_midi_cmd_en   <= '0';
       when st_data2   =>
-        s_midi_cmd_rst  <= '1';
-        s_midi_cmd_en   <= '0';
       when others     =>
-        s_midi_cmd_rst  <= '0';
-        s_midi_cmd_en   <= '0';
+
     end case;
   end process;
 
@@ -225,6 +254,15 @@ begin
       if s_midi_cmd_en = '1' then
         s_midi_cmd_r <= s_midi_cmd_in;
       end if;
+    end if;
+  end process;
+
+  p_new_data_flag: process(i_new_data, s_rst_flag)
+  begin
+    if s_rst_flag = '0' then
+      s_data_flag <= '0';
+    elsif i_new_data'event and i_new_data = '1' then
+      s_data_flag <= '1';
     end if;
   end process;
 
