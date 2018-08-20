@@ -23,18 +23,21 @@ package UTILS_PKG is
   );
 
   -- midi message subtypes (according to MIDI protocol)
-  subtype MIDI_CMD  is natural range 7 downto 4;
-  subtype MIDI_CH   is natural range 3 downto 0;
-  subtype MIDI_DATA is natural range 7 downto 0;
+  subtype MIDI_CMD_RANGE  is natural range 7 downto 4;
+  subtype MIDI_CH_RANGE   is natural range 3 downto 0;
+  subtype MIDI_DATA_RANGE is natural range 6 downto 0;
 
   -- sequencer subtypes (according to internal sequencer structure)
-  subtype SEQ_TS_SEC    is natural range 31 downto 21;
-  subtype SEQ_MSG_TYPE  is natural range 20 downto 18;
-  subtype SEQ_MSG_CH    is natural range 17 downto 14;
-  subtype SEQ_MSG_NOTE  is natural range 13 downto 7;
-  subtype SEQ_MSG_VEL   is natural range 6 downto 0;
+  constant TYPE_BITS      : natural := 3; -- configurable for future use
 
-  subtype SEQ_TS_FRAC   is natural range 11 downto 0;
+  subtype SEQ_RSVD_RANGE  is natural range 31 downto (TYPE_BITS + 18);  -- reserved
+  subtype SEQ_TYPE_RANGE  is natural range (TYPE_BITS + 18 - 1) downto 18;
+  subtype SEQ_CH_RANGE    is natural range 17 downto 14;
+  subtype SEQ_DATA1_RANGE is natural range 13 downto 7;
+  subtype SEQ_DATA2_RANGE is natural range 6 downto 0;
+
+  subtype SEQ_TS_S_RANGE  is natural range 22 downto 12;
+  subtype SEQ_TS_F_RANGE  is natural range 11 downto 0;
 
 end UTILS_PKG;
 
