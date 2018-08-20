@@ -1,0 +1,8 @@
+source scripts/vcom_midi.scr
+
+vsim -t ps TB_MIDI_EVT_FILTER
+
+add wave *
+add wave EVT/*
+
+run 10 ns
