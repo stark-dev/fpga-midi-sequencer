@@ -8,7 +8,7 @@ use work.UTILS_PKG.all;
 entity MIDI_TYPE_LUT is
 port (
   i_midi_cmd    : in  t_midi_cmd;
-  o_type        : out std_logic_vector(TYPE_BITS - 1 downto 0)
+  o_type        : out std_logic_vector(MIDI_TYPE_SIZE - 1 downto 0)
   );
 end entity;
 

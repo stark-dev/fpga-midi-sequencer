@@ -12,7 +12,7 @@ port (
   i_new_data    : in  std_logic;
   i_data_in     : in  std_logic_vector(7 downto 0);
 
-  o_midi_msg    : out std_logic_vector(31 downto 0);
+  o_midi_msg    : out std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
   o_midi_ready  : out std_logic
   );
 end entity;
@@ -45,7 +45,7 @@ architecture BHV of MIDI_EVT_FILTER is
   signal s_data_out     : std_logic_vector(7 downto 0);
 
   -- command register
-  signal s_cmd_out      : std_logic_vector(31 downto 0);
+  signal s_cmd_out      : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
   signal s_cmd_ready    : std_logic;
 
   -- midi command register
@@ -63,7 +63,7 @@ architecture BHV of MIDI_EVT_FILTER is
   signal s_midi_data    : std_logic_vector(6 downto 0);
 
   -- sequencer data fields
-  signal s_cmd_type     : std_logic_vector(TYPE_BITS - 1 downto 0);
+  signal s_cmd_type     : std_logic_vector(MIDI_TYPE_SIZE - 1 downto 0);
 
   signal s_cmd_type_e   : std_logic;
   signal s_cmd_ch_e     : std_logic;
@@ -101,7 +101,7 @@ architecture BHV of MIDI_EVT_FILTER is
   component MIDI_TYPE_LUT is
   port (
     i_midi_cmd    : in  t_midi_cmd;
-    o_type        : out std_logic_vector(TYPE_BITS - 1 downto 0)
+    o_type        : out std_logic_vector(MIDI_TYPE_SIZE - 1 downto 0)
     );
   end component;
 
@@ -136,7 +136,7 @@ begin
   );
 
   TYPE_REG : REGISTER_N
-  generic map (TYPE_BITS)
+  generic map (MIDI_TYPE_SIZE)
   port map(
     i_clk         => i_clk,
     i_reset_n     => i_reset_n,
@@ -219,43 +219,41 @@ begin
         when st_status  =>
           case s_midi_cmd_r is
             when midi_note_off  =>
-              if s_sample = '1' then
-                s_msg_state <= st_data1;
-              end if;
+              s_msg_state <= st_wait1;
             when midi_note_on   =>
-              if s_sample = '1' then
-                s_msg_state <= st_data1;
-              end if;
+              s_msg_state <= st_wait1;
             when midi_ctrl_ch   =>
-              if s_sample = '1' then
-                s_msg_state <= st_data1;
-              end if;
+              s_msg_state <= st_wait1;
             when midi_prg_ch    =>
-              if s_sample = '1' then
-                s_msg_state <= st_data1;
-              end if;
+              s_msg_state <= st_wait1;
             when others         =>
               s_msg_state <= st_ready;
           end case;
+        when st_wait1   =>
+          if s_sample = '1' then
+            s_msg_state <= st_data1;
+          else
+            s_msg_state <= st_wait1;
+          end if;
         when st_data1   =>
           case s_midi_cmd_r is
             when midi_note_off  =>
-              if s_sample = '1' then
-                s_msg_state <= st_data2;
-              end if;
+              s_msg_state <= st_wait2;
             when midi_note_on   =>
-              if s_sample = '1' then
-                s_msg_state <= st_data2;
-              end if;
+              s_msg_state <= st_wait2;
             when midi_ctrl_ch   =>
-              if s_sample = '1' then
-                s_msg_state <= st_data2;
-              end if;
+              s_msg_state <= st_wait2;
             when midi_prg_ch    =>
               s_msg_state <= st_end;
             when others         =>
               s_msg_state <= st_ready;
           end case;
+        when st_wait2   =>
+          if s_sample = '1' then
+            s_msg_state <= st_data2;
+          else
+            s_msg_state <= st_wait2;
+          end if;
         when st_data2   =>
           s_msg_state <= st_end;
         when st_end     =>
@@ -299,12 +297,32 @@ begin
 
         s_cmd_ready     <= '0';
 
+      when st_wait1   =>
+        s_midi_cmd_rst  <= '1';
+
+        s_cmd_type_e    <= '0';
+        s_cmd_ch_e      <= '0';
+        s_cmd_data1_e   <= '0';
+        s_cmd_data2_e   <= '0';
+
+        s_cmd_ready     <= '0';
+
       when st_data1   =>
         s_midi_cmd_rst  <= '1';
 
         s_cmd_type_e    <= '0';
         s_cmd_ch_e      <= '0';
         s_cmd_data1_e   <= '1';
+        s_cmd_data2_e   <= '0';
+
+        s_cmd_ready     <= '0';
+
+      when st_wait2   =>
+        s_midi_cmd_rst  <= '1';
+
+        s_cmd_type_e    <= '0';
+        s_cmd_ch_e      <= '0';
+        s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
 
         s_cmd_ready     <= '0';

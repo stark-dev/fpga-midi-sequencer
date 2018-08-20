@@ -27,17 +27,28 @@ package UTILS_PKG is
   subtype MIDI_CH_RANGE   is natural range 3 downto 0;
   subtype MIDI_DATA_RANGE is natural range 6 downto 0;
 
-  -- sequencer subtypes (according to internal sequencer structure)
-  constant TYPE_BITS      : natural := 3; -- configurable for future use
+  -- sequencer constants and subtypes (according to internal sequencer structure)
+  constant MIDI_TYPE_SIZE : natural := 3;   -- configurable for future use
 
-  subtype SEQ_RSVD_RANGE  is natural range 31 downto (TYPE_BITS + 18);  -- reserved
-  subtype SEQ_TYPE_RANGE  is natural range (TYPE_BITS + 18 - 1) downto 18;
+  constant SEQ_EVENT_SIZE : natural := 32;  -- size of internally represented MIDI event
+  constant SEQ_TIME_SIZE  : natural := 32;  -- size of internally represented timestamp
+
+  subtype SEQ_RSVD_RANGE  is natural range 31 downto (MIDI_TYPE_SIZE + 18);  -- reserved
+  subtype SEQ_TYPE_RANGE  is natural range (MIDI_TYPE_SIZE + 18 - 1) downto 18;
   subtype SEQ_CH_RANGE    is natural range 17 downto 14;
   subtype SEQ_DATA1_RANGE is natural range 13 downto 7;
   subtype SEQ_DATA2_RANGE is natural range 6 downto 0;
 
-  subtype SEQ_TS_S_RANGE  is natural range 22 downto 12;
-  subtype SEQ_TS_F_RANGE  is natural range 11 downto 0;
+  -- sequencer core constants and subtypes (status register)
+  constant ST_TSS_SIZE    : natural := 11;  -- timestamp in seconds
+  constant ST_TSF_SIZE    : natural := 12;  -- timestamp in fractions
+  constant ST_RUN_SIZE    : natural := 1;   -- play / pause
+  constant ST_VOL_SIZE    : natural := 7;   -- volume
+  constant ST_BPM_SIZE    : natural := 8;   -- bpm tempo
+  constant ST_MTR_SIZE    : natural := 1;   -- metronome enable
+
+  subtype  ST_TSS_RANGE   is natural range (ST_TSS_SIZE + ST_TSF_SIZE - 1) downto ST_TSF_SIZE;
+  subtype  ST_TSF_RANGE   is natural range ST_TSF_SIZE  - 1 downto 0;
 
 end UTILS_PKG;
 

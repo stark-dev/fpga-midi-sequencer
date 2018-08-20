@@ -16,7 +16,7 @@ architecture TEST of TB_MIDI_EVT_FILTER is
     i_new_data    : in  std_logic;
     i_data_in     : in  std_logic_vector(7 downto 0);
 
-    o_midi_msg    : out std_logic_vector(31 downto 0);
+    o_midi_msg    : out std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
     o_midi_ready  : out std_logic
     );
   end component;
@@ -90,7 +90,7 @@ architecture TEST of TB_MIDI_EVT_FILTER is
   signal s_reset_n      : std_logic;
 
   -- midi evt filter
-  signal s_midi_msg     : std_logic_vector(31 downto 0);
+  signal s_midi_msg     : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
   signal s_midi_ready   : std_logic;
 
   -- uart tx
