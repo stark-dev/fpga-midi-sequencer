@@ -1,0 +1,8 @@
+source scripts/vcom_ts.scr
+
+vsim -t ps TB_TIMESTAMP_GEN
+
+add wave *
+add wave TS_GEN/*
+
+run 10 ns

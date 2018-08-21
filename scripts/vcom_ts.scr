@@ -1,0 +1,2 @@
+vcom vhd/src/core/timestamp_gen.vhd
+vcom vhd/tb/tb_timestamp_gen.vhd
