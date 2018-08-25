@@ -24,7 +24,7 @@ architecture BHV of UP_DOWN_COUNTER is
 
 begin
 
-  count: process(i_clk)
+  count: process(i_clk, i_reset_n)
   begin
     if i_reset_n = '0' then
       s_q_temp <= to_unsigned(0, n);
