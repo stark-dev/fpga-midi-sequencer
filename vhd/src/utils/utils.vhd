@@ -44,11 +44,30 @@ package UTILS_PKG is
   constant ST_TSF_SIZE    : natural := 12;  -- timestamp in fractions
   constant ST_RUN_SIZE    : natural := 1;   -- play / pause
   constant ST_VOL_SIZE    : natural := 7;   -- volume
-  constant ST_BPM_SIZE    : natural := 8;   -- bpm tempo
-  constant ST_MTR_SIZE    : natural := 1;   -- metronome enable
+  -- constant ST_BPM_SIZE    : natural := 8;   -- bpm tempo
+  -- constant ST_MTR_SIZE    : natural := 1;   -- metronome enable
 
   subtype  ST_TSS_RANGE   is natural range (ST_TSS_SIZE + ST_TSF_SIZE - 1) downto ST_TSF_SIZE;
   subtype  ST_TSF_RANGE   is natural range ST_TSF_SIZE  - 1 downto 0;
+
+  -- track status register
+  constant TR_ST_SIZE     : natural := 32;
+  constant TR_PATCH_SIZE  : natural := 7;
+  constant TR_CH_SIZE     : natural := 4;
+  constant TR_VOL_SIZE    : natural := 7;
+  constant TR_PAN_SIZE    : natural := 7;
+
+  subtype  TR_PATCH_RANGE is natural range 6 downto 0;
+  subtype  TR_CH_RANGE    is natural range 10 downto 7;
+  subtype  TR_VOL_RANGE   is natural range 17 downto 11;
+  subtype  TR_PAN_RANGE   is natural range 24 downto 18;
+  constant TR_MONO_BIT    : natural := 25;
+  constant TR_SOLO_BIT    : natural := 26;
+  constant TR_REC_BIT     : natural := 27;
+  constant TR_ACT_BIT     : natural := 28;
+  constant TR_POLY_BIT    : natural := 29;
+  constant TR_OMNI_BIT    : natural := 30;
+  constant TR_RESERVED    : natural := 31;
 
 end UTILS_PKG;
 
