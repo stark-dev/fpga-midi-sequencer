@@ -48,8 +48,8 @@ architecture BHV of TRACK_STATUS is
 --------------------------------------------------------------------------------
 -- constants
 --------------------------------------------------------------------------------
-  -- constant c_max_patch    : integer := 2**TR_PATCH_SIZE - 1;
-  -- constant c_min_patch    : integer := 0;
+  constant c_max_patch    : integer := 2**TR_PATCH_SIZE - 1;
+  constant c_min_patch    : integer := 0;
 
   constant c_max_vol      : integer := 2**TR_VOL_SIZE - 1;
   constant c_min_vol      : integer := 0;
@@ -103,14 +103,22 @@ begin
   -- process
   p_patch_select: process(i_clk, i_reset_n, i_patch_rst)
   begin
-    if i_reset_n = '0' or i_pan_rst = '0' then
+    if i_reset_n = '0' or i_patch_rst = '0' then
       s_patch_number <= (others => '0');
     elsif i_clk'event and i_clk = '1' then
       if s_act = '1' then
         if i_patch_up  = '1' then
-          s_patch_number <= s_patch_number + 1;
+          if s_patch_number = to_unsigned(c_max_patch, TR_PATCH_SIZE) then
+            s_patch_number <= (others => '0');
+          else
+            s_patch_number <= s_patch_number + 1;
+          end if;
         elsif i_patch_dn = '1' then
-          s_patch_number <= s_patch_number - 1;
+          if s_patch_number = c_min_patch then
+            s_patch_number <= to_unsigned(c_min_patch, TR_PATCH_SIZE);
+          else
+            s_patch_number <= s_patch_number - 1;
+          end if;
         end if;
       end if;
     end if;
