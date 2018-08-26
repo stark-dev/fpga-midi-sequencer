@@ -63,6 +63,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 100 ns;
 
+    --reset
     s_rst     <= '0';
     s_btn1    <= '1';
     s_btn2    <= '1';
@@ -81,7 +82,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 100 ns;
 
-    -- very short press
+    -- very short press (not detected)
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '0';
@@ -100,7 +101,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 100 ns;
 
-    -- btn 1
+    -- play
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';
@@ -119,7 +120,26 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 1
+    -- pause
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 500 ns;
+
+    -- play
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';
@@ -138,7 +158,83 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 1
+    -- vol up
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '0';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 100 ns;
+
+    -- vol down
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 100 ns;
+
+    -- vol down
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 100 ns;
+
+    -- vol down
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 100 ns;
+
+    -- pause
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';
@@ -157,7 +253,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 1
+    -- restart
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';
@@ -165,7 +261,7 @@ begin
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
+    wait for 320 * c_clock_half_p;
 
     s_rst     <= '1';
     s_btn1    <= '1';
@@ -176,7 +272,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 4 long
+    -- menu
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '1';
@@ -195,7 +291,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 4
+    -- toggle menu (patch)
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '1';
@@ -214,7 +310,7 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 2
+    -- inc patch
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '0';
@@ -233,7 +329,102 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- btn 1
+    -- toggle menu (track vol)
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- toggle menu (pan)
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- toggle menu (poly)
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- toggle poly
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- exit menu
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- play
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';

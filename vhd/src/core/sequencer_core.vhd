@@ -241,8 +241,8 @@ begin
   s_tr_pan_dn       <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
   s_tr_pan_rst      <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '1';
 
-  s_tr_poly_toggle  <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
-  s_tr_omni_toggle  <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
+  s_tr_poly_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
+  s_tr_omni_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
 
   -- components
   TS_GEN : TIMESTAMP_GEN
