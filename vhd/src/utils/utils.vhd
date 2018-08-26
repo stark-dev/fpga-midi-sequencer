@@ -40,6 +40,9 @@ package UTILS_PKG is
   subtype SEQ_DATA2_RANGE is natural range 6 downto 0;
 
   -- sequencer core constants and subtypes (status register)
+  constant SEQ_TRACKS     : natural := 8;   -- available tracks
+  constant ST_TRACK_SIZE  : natural := 3;   -- bits to represent avail tracks
+
   constant ST_TSS_SIZE    : natural := 11;  -- timestamp in seconds
   constant ST_TSF_SIZE    : natural := 12;  -- timestamp in fractions
   constant ST_RUN_SIZE    : natural := 1;   -- play / pause

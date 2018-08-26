@@ -1,0 +1,8 @@
+source scripts/vcom_core.scr
+
+vsim -t ps TB_CORE
+
+add wave *
+add wave DUT/*
+
+run 10 ns
