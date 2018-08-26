@@ -246,8 +246,8 @@ begin
 
   -- components
   TS_GEN : TIMESTAMP_GEN
-  -- generic map (c_ts_clock_div) -- TODO uncomment (just for test purposes)
-  generic map (100)
+  -- generic map (100) -- TODO remove comment (just for test purposes)
+  generic map (c_ts_clock_div)
   port map (
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
