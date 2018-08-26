@@ -174,6 +174,7 @@ end component;
   -- volume control
   signal s_vol_up         : std_logic;
   signal s_vol_down       : std_logic;
+  signal s_vol_rst        : std_logic;
   signal s_main_vol       : unsigned(ST_VOL_SIZE - 1 downto 0);
 
   -- menu option toggle
@@ -226,26 +227,27 @@ begin
 
   s_tr_patch_up     <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
   s_tr_patch_dn     <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
-  s_tr_patch_rst    <= s_btn_r_l when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
+  s_tr_patch_rst    <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '1';
 
   s_tr_ch_up        <= '0'; -- TODO decide if channel is controlled by sequencer or not
   s_tr_ch_dn        <= '0';
-  s_tr_ch_rst       <= '0';
+  s_tr_ch_rst       <= '1';
 
   s_tr_vol_up       <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
   s_tr_vol_dn       <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
-  s_tr_vol_rst      <= s_btn_r_l when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
+  s_tr_vol_rst      <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '1';
 
   s_tr_pan_up       <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
   s_tr_pan_dn       <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
-  s_tr_pan_rst      <= s_btn_r_l when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
+  s_tr_pan_rst      <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '1';
 
   s_tr_poly_toggle  <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
   s_tr_omni_toggle  <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
 
   -- components
   TS_GEN : TIMESTAMP_GEN
-  generic map (c_ts_clock_div)
+  -- generic map (c_ts_clock_div) -- TODO uncomment (just for test purposes)
+  generic map (100)
   port map (
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
@@ -405,6 +407,7 @@ begin
         s_restart         <= '1';
         s_active_tr_rst   <= '0';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '0';
         s_tr_reset        <= (others => '0');
 
       when st_init    =>
@@ -412,6 +415,7 @@ begin
         s_restart         <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
       when st_idle    =>
@@ -419,6 +423,7 @@ begin
         s_restart         <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
       when st_play    =>
@@ -426,6 +431,7 @@ begin
         s_restart         <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
       when st_stop    =>
@@ -433,6 +439,7 @@ begin
         s_restart         <= '1';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
       when st_menu    =>
@@ -440,6 +447,7 @@ begin
         s_restart         <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '1';
+        s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
       when others     =>
@@ -447,13 +455,14 @@ begin
         s_restart         <= '1';
         s_active_tr_rst   <= '0';
         s_menu_reset      <= '0';
+        s_vol_rst         <= '0';
         s_tr_reset        <= (others => '0');
     end case;
   end process;
 
-  p_volume_ctrl: process(i_clk, i_reset_n) -- TODO add control for main vol
+  p_volume_ctrl: process(i_clk, i_reset_n, s_vol_rst)
   begin
-    if i_reset_n = '0' then
+    if i_reset_n = '0' or s_vol_rst = '0' then
       s_main_vol <= (others => '1');
     elsif i_clk'event and i_clk = '1' then
       if s_vol_up = '1' then
