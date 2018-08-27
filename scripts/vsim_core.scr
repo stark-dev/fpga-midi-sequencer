@@ -1,8 +1,10 @@
-source scripts/vcom_core.scr
+#source scripts/vcom_core.scr
 
-vsim -t ps TB_CORE
+vsim -t ns TB_CORE
 
 add wave *
 add wave DUT/*
 
-run 10 ns
+set NumericStdNoWarnings 1
+run 0 ns
+set NumericStdNoWarnings 0
