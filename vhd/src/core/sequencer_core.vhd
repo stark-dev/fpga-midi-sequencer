@@ -63,8 +63,6 @@ architecture BHV of SEQUENCER_CORE is
   -- track status registers
   type t_track_status is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_ST_SIZE - 1 downto 0);
 
-  type t_sound_gen_fsm  is (st_reset, st_ready, st_direct, st_data);
-
 --------------------------------------------------------------------------------
 -- components
 --------------------------------------------------------------------------------
