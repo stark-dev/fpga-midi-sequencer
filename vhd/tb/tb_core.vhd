@@ -27,6 +27,7 @@ architecture TEST of TB_CORE is
     i_midi_ready    : in  t_midi_ready;
     i_midi_data     : in  t_midi_data;
 
+    o_sound_on      : out std_logic;
     o_sg_note       : out t_sg_note;
     o_sg_vel        : out t_sg_vel;
     o_sg_start      : out t_sg_start;
@@ -140,6 +141,8 @@ architecture TEST of TB_CORE is
   signal s_sg_start     : t_sg_start;
   signal s_sg_stop      : t_sg_stop;
 
+  signal s_sound_on     : std_logic;
+
 begin
   s_midi_ready(0) <= s_evt_ready;
   s_midi_data(0)  <= s_evt_out;
@@ -157,6 +160,7 @@ begin
     i_tr_solo     => s_tr_solo,
     i_midi_ready  => s_midi_ready,
     i_midi_data   => s_midi_data,
+    o_sound_on    => s_sound_on,
     o_sg_note     => s_sg_note,
     o_sg_vel      => s_sg_vel,
     o_sg_start    => s_sg_start,

@@ -19,6 +19,15 @@ port (
   i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
   i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
+  i_midi_ready    : in  t_midi_ready;
+  i_midi_data     : in  t_midi_data;
+
+  o_sound_on      : out std_logic;
+  o_sg_note       : out t_sg_note;
+  o_sg_vel        : out t_sg_vel;
+  o_sg_start      : out t_sg_start;
+  o_sg_stop       : out t_sg_stop;
+
   o_display_a     : out t_display_array
 );
 end entity;
@@ -33,7 +42,7 @@ architecture BHV of SEQUENCER_CORE is
   constant c_max_vol      : integer := 2**ST_VOL_SIZE - 1;
   constant c_min_vol      : integer := 0;
 
-  constant c_btn_size     : integer := 8;
+  constant c_btn_size     : integer := 8; -- TODO set to proper values
   constant c_btn_short    : integer := 50;
   constant c_btn_long     : integer := 150;
 
@@ -44,6 +53,8 @@ architecture BHV of SEQUENCER_CORE is
 --------------------------------------------------------------------------------
   -- track status registers
   type t_track_status is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_ST_SIZE - 1 downto 0);
+
+  type t_sound_gen_fsm  is (st_reset, st_ready, st_data);
 
 --------------------------------------------------------------------------------
 -- components
@@ -229,6 +240,14 @@ end component;
   signal s_track_vol      : std_logic_vector(TR_VOL_SIZE - 1 downto 0);
   signal s_track_patch    : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
 
+  -- midi data registers
+  signal s_midi_data_r    : t_midi_data;
+
+  -- sound gen control
+  signal s_sg_fsm         : t_sound_gen_fsm;
+  signal s_sound_on       : std_logic;
+  signal s_sound_rst      : std_logic;
+
 begin
 
   -- output assignment
@@ -274,6 +293,7 @@ begin
   s_tr_poly_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
   s_tr_omni_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
 
+  -- track status fields
   s_track_omni      <= s_tr_status(to_integer(s_active_tr))(TR_OMNI_BIT);
   s_track_poly      <= s_tr_status(to_integer(s_active_tr))(TR_POLY_BIT);
   s_track_rec       <= s_tr_status(to_integer(s_active_tr))(TR_REC_BIT);
@@ -282,6 +302,9 @@ begin
   s_track_pan       <= s_tr_status(to_integer(s_active_tr))(TR_PAN_RANGE);
   s_track_vol       <= s_tr_status(to_integer(s_active_tr))(TR_VOL_RANGE);
   s_track_patch     <= s_tr_status(to_integer(s_active_tr))(TR_PATCH_RANGE);
+
+  -- sound generator
+  s_sound_rst       <= i_reset_n;   -- TODO add all sound off
 
   -- components
   TS_GEN : TIMESTAMP_GEN
@@ -405,6 +428,21 @@ begin
     o_display_a   => s_display_array
   );
 
+  GEN_DATA_REG:
+  for i in 0 to SEQ_TRACKS-1 generate
+    MIDI_DATA_REG_X: REGISTER_N
+    generic map(
+      SEQ_EVENT_SIZE
+    )
+    port map(
+      i_clk       => i_clk,
+      i_reset_n   => i_reset_n,
+      i_load_en   => i_midi_ready(i),
+      i_par_in    => i_midi_data(i),
+      o_par_out   => s_midi_data_r(i)
+    );
+  end generate;
+
   -- processes
   p_core_fsm: process(i_clk, i_reset_n)
   begin
@@ -461,6 +499,7 @@ begin
       when st_reset   =>
         s_play_pause_n    <= '0';
         s_restart         <= '1';
+        s_sound_on        <= '0';
         s_active_tr_rst   <= '0';
         s_menu_reset      <= '0';
         s_vol_rst         <= '0';
@@ -469,6 +508,7 @@ begin
       when st_init    =>
         s_play_pause_n    <= '0';
         s_restart         <= '0';
+        s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
         s_vol_rst         <= '1';
@@ -477,6 +517,7 @@ begin
       when st_idle    =>
         s_play_pause_n    <= '0';
         s_restart         <= '0';
+        s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
         s_vol_rst         <= '1';
@@ -485,6 +526,7 @@ begin
       when st_play    =>
         s_play_pause_n    <= '1';
         s_restart         <= '0';
+        s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
         s_vol_rst         <= '1';
@@ -493,6 +535,7 @@ begin
       when st_stop    =>
         s_play_pause_n    <= '0';
         s_restart         <= '1';
+        s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
         s_vol_rst         <= '1';
@@ -501,6 +544,7 @@ begin
       when st_menu    =>
         s_play_pause_n    <= '0';
         s_restart         <= '0';
+        s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '1';
         s_vol_rst         <= '1';
@@ -509,11 +553,76 @@ begin
       when others     =>
         s_play_pause_n    <= '0';
         s_restart         <= '1';
+        s_sound_on        <= '0';
         s_active_tr_rst   <= '0';
         s_menu_reset      <= '0';
         s_vol_rst         <= '0';
         s_tr_reset        <= (others => '0');
     end case;
+  end process;
+
+  p_sound_gen_fsm: process(s_sound_rst, i_clk)
+  begin
+    if s_sound_rst = '0' then
+      s_sg_fsm <= st_reset;
+    elsif i_clk'event and i_clk = '1' then
+      case s_sg_fsm is
+        when st_reset =>
+          s_sg_fsm <= st_ready;
+        when st_ready =>
+          if i_midi_ready(to_integer(s_active_tr)) = '1' then
+            s_sg_fsm <= st_data;
+          else
+            s_sg_fsm <= st_ready;
+          end if;
+        when st_data =>
+          s_sg_fsm <= st_ready;
+      end case;
+    end if;
+  end process;
+
+  p_sound_ctrl: process(s_sg_fsm)
+  begin
+    case s_sg_fsm is
+      when st_reset   =>
+        for i in 0 to SEQ_TRACKS - 1 loop
+          o_sg_start(i) <= '0';
+          o_sg_stop(i)  <= '1';
+        end loop;
+
+      when st_ready   =>
+        for i in 0 to SEQ_TRACKS - 1 loop
+          o_sg_start(i) <= '0';
+          o_sg_stop(i)  <= '0';
+        end loop;
+
+      when st_data    =>
+        case s_midi_data_r(to_integer(s_active_tr))(SEQ_TYPE_RANGE) is
+          when "000"  => -- note off
+            o_sg_stop(to_integer(s_active_tr))  <= '1';
+          when "001"  => -- note on
+            o_sg_start(to_integer(s_active_tr))  <= '1';
+          when others => -- nothing
+            for i in 0 to SEQ_TRACKS - 1 loop
+              o_sg_start(i) <= '0';
+              o_sg_stop(i)  <= '0';
+            end loop;
+        end case;
+
+      when others     =>
+        for i in 0 to SEQ_TRACKS - 1 loop
+          o_sg_start(i) <= '0';
+          o_sg_stop(i)  <= '1';
+        end loop;
+    end case;
+  end process;
+
+  p_sound_ctrl_out: process(i_midi_data)
+  begin
+    for i in 0 to SEQ_TRACKS - 1 loop
+      o_sg_note(i)      <= i_midi_data(i)(SEQ_DATA1_RANGE);
+      o_sg_vel(i)       <= i_midi_data(i)(SEQ_DATA2_RANGE);
+    end loop;
   end process;
 
   p_volume_ctrl: process(i_clk, i_reset_n, s_vol_rst)
