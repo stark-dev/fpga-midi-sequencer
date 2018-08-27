@@ -27,6 +27,10 @@ port (
   i_pb_ready      : in  t_midi_ready;
   i_pb_data       : in  t_midi_data;
 
+  -- outputs
+  o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
+  o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+
   o_sound_on      : out std_logic;
   o_sg_note       : out t_sg_note;
   o_sg_vel        : out t_sg_vel;
@@ -159,6 +163,20 @@ port (
 );
 end component;
 
+component PLAYBACK_ENGINE is
+port (
+  i_clk         : in  std_logic;
+  i_reset_n     : in  std_logic;
+  i_state       : in  t_core_fsm;
+  i_evt_ready   : in  std_logic;
+  i_evt_data    : in  std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
+  o_sg_note     : out std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
+  o_sg_vel      : out std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
+  o_sg_start    : out std_logic;
+  o_sg_stop     : out std_logic
+);
+end component;
+
 --------------------------------------------------------------------------------
 -- signals
 --------------------------------------------------------------------------------
@@ -245,20 +263,21 @@ end component;
   signal s_track_vol      : std_logic_vector(TR_VOL_SIZE - 1 downto 0);
   signal s_track_patch    : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
 
-  -- midi data registers
-  signal s_midi_data_r    : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-  signal s_pb_data_r      : t_midi_data;
-
   -- sound gen control
-  signal s_sg_fsm         : t_sound_gen_fsm;
   signal s_sound_on       : std_logic;
   signal s_sound_rst      : std_logic;
+
+  signal s_evt_ready      : t_midi_ready;
+  signal s_evt_data       : t_midi_data;
 
 begin
 
   -- output assignment
   o_display_a       <= s_display_array;
   o_sound_on        <= s_sound_on;
+
+  o_ts_seconds      <= s_ts_secs;
+  o_ts_fraction     <= s_ts_frac;
 
   -- internal signal assignment
   s_active_tr_tc_v  <= to_unsigned(SEQ_TRACKS - 1, ST_TRACK_SIZE);
@@ -435,32 +454,34 @@ begin
     o_display_a   => s_display_array
   );
 
-  DIRECT_MIDI_REG: REGISTER_N
-  generic map(
-    SEQ_EVENT_SIZE
-  )
-  port map(
-    i_clk       => i_clk,
-    i_reset_n   => i_reset_n,
-    i_load_en   => i_midi_ready,
-    i_par_in    => i_midi_data,
-    o_par_out   => s_midi_data_r
-  );
-
-  PB_REG_GEN:
+  PB_ENGINE_GEN:
   for i in 0 to SEQ_TRACKS - 1 generate
-    PLAYBACK_MIDI_REG_X: REGISTER_N
-    generic map(
-      SEQ_EVENT_SIZE
-    )
+    PLAYBACK_ENG_X : PLAYBACK_ENGINE
     port map(
-      i_clk       => i_clk,
-      i_reset_n   => i_reset_n,
-      i_load_en   => i_pb_ready(i),
-      i_par_in    => i_pb_data(i),
-      o_par_out   => s_pb_data_r(i)
+      i_clk         => i_clk,
+      i_reset_n     => s_sound_rst,
+      i_state       => s_fsm_status,
+      i_evt_ready   => s_evt_ready(i),
+      i_evt_data    => s_evt_data(i),
+      o_sg_note     => o_sg_note(i),
+      o_sg_vel      => o_sg_vel(i),
+      o_sg_start    => o_sg_start(i),
+      o_sg_stop     => o_sg_stop(i)
     );
   end generate;
+
+  p_sound_evt_in_mux: process(i_midi_ready, i_midi_data, i_pb_ready, i_pb_data)
+  begin
+    for i in 0 to SEQ_TRACKS - 1 loop
+      if to_integer(s_active_tr) = i then
+        s_evt_ready(i)  <= i_midi_ready;
+        s_evt_data(i)   <= i_midi_data;
+      else
+        s_evt_ready(i)  <= i_pb_ready(i);
+        s_evt_data(i)   <= i_pb_data(i);
+      end if;
+    end loop;
+  end process;
 
   -- processes
   p_core_fsm: process(i_clk, i_reset_n)
@@ -578,87 +599,6 @@ begin
         s_vol_rst         <= '0';
         s_tr_reset        <= (others => '0');
     end case;
-  end process;
-
-  p_sound_gen_fsm: process(s_sound_rst, i_clk)
-  begin
-    if s_sound_rst = '0' then
-      s_sg_fsm <= st_reset;
-    elsif i_clk'event and i_clk = '1' then
-      case s_sg_fsm is
-        when st_reset   =>
-          s_sg_fsm <= st_ready;
-        when st_ready   =>
-          if i_midi_ready = '1' then
-            s_sg_fsm <= st_direct;
-          elsif i_pb_ready(0) = '1' then  -- TODO fix index
-            s_sg_fsm <= st_data;
-          else
-            s_sg_fsm <= st_ready;
-          end if;
-        when st_direct  =>
-          s_sg_fsm <= st_ready;
-        when st_data  =>
-          s_sg_fsm <= st_ready;
-      end case;
-    end if;
-  end process;
-
-  p_sound_ctrl: process(s_sg_fsm)
-  begin
-    case s_sg_fsm is
-      when st_reset   =>
-        for i in 0 to SEQ_TRACKS - 1 loop
-          o_sg_start(i) <= '0';
-          o_sg_stop(i)  <= '1';
-        end loop;
-
-      when st_ready   =>
-        for i in 0 to SEQ_TRACKS - 1 loop
-          o_sg_start(i) <= '0';
-          o_sg_stop(i)  <= '0';
-        end loop;
-
-      when st_direct  =>
-        case s_midi_data_r(SEQ_TYPE_RANGE) is
-          when "000"  => -- note off
-            o_sg_stop(to_integer(s_active_tr))  <= '1';
-          when "001"  => -- note on
-            o_sg_start(to_integer(s_active_tr))  <= '1';
-          when others => -- nothing
-            for i in 0 to SEQ_TRACKS - 1 loop
-              o_sg_start(i) <= '0';
-              o_sg_stop(i)  <= '0';
-            end loop;
-        end case;
-
-      when st_data    =>
-        case s_pb_data_r(0)(SEQ_TYPE_RANGE) is  -- TODO fix index
-          when "000"  => -- note off
-            o_sg_stop(0)  <= '1';
-          when "001"  => -- note on
-            o_sg_start(0)  <= '1';
-          when others => -- nothing
-            for i in 0 to SEQ_TRACKS - 1 loop
-              o_sg_start(i) <= '0';
-              o_sg_stop(i)  <= '0';
-            end loop;
-        end case;
-
-      when others     =>
-        for i in 0 to SEQ_TRACKS - 1 loop
-          o_sg_start(i) <= '0';
-          o_sg_stop(i)  <= '1';
-        end loop;
-    end case;
-  end process;
-
-  p_sound_ctrl_out: process(i_midi_data)
-  begin
-    for i in 0 to SEQ_TRACKS - 1 loop
-      o_sg_note(i)      <= i_midi_data(SEQ_DATA1_RANGE);
-      o_sg_vel(i)       <= i_midi_data(SEQ_DATA2_RANGE);
-    end loop;
   end process;
 
   p_volume_ctrl: process(i_clk, i_reset_n, s_vol_rst)

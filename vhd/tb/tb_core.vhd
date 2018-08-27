@@ -24,8 +24,17 @@ architecture TEST of TB_CORE is
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
     i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
-    i_midi_ready    : in  t_midi_ready;
-    i_midi_data     : in  t_midi_data;
+    -- direct midi events
+    i_midi_ready    : in  std_logic;
+    i_midi_data     : in  std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
+
+    -- playback events
+    i_pb_ready      : in  t_midi_ready;
+    i_pb_data       : in  t_midi_data;
+
+    -- outputs
+    o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
+    o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
     o_sound_on      : out std_logic;
     o_sg_note       : out t_sg_note;
@@ -117,6 +126,9 @@ architecture TEST of TB_CORE is
 
   signal s_display  : t_display_array;
 
+  signal s_ts_seconds   : std_logic_vector(ST_TSS_SIZE-1 downto 0);
+  signal s_ts_fraction  : std_logic_vector(ST_TSF_SIZE-1 downto 0);
+
   -- uart tx
   signal s_uart_en      : std_logic;
   signal s_tx_load_en   : std_logic;
@@ -134,8 +146,10 @@ architecture TEST of TB_CORE is
   signal s_evt_ready    : std_logic;
 
   -- sound gen
-  signal s_midi_ready   : t_midi_ready;
-  signal s_midi_data    : t_midi_data;
+  signal s_midi_ready   : std_logic;
+  signal s_midi_data    : std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
+  signal s_pb_ready     : t_midi_ready;
+  signal s_pb_data      : t_midi_data;
   signal s_sg_note      : t_sg_note;
   signal s_sg_vel       : t_sg_vel;
   signal s_sg_start     : t_sg_start;
@@ -144,8 +158,8 @@ architecture TEST of TB_CORE is
   signal s_sound_on     : std_logic;
 
 begin
-  s_midi_ready(0) <= s_evt_ready;
-  s_midi_data(0)  <= s_evt_out;
+  s_midi_ready    <= s_evt_ready;
+  s_midi_data     <= s_evt_out;
 
 
   DUT : SEQUENCER_CORE
@@ -160,6 +174,10 @@ begin
     i_tr_solo     => s_tr_solo,
     i_midi_ready  => s_midi_ready,
     i_midi_data   => s_midi_data,
+    i_pb_ready    => s_pb_ready,
+    i_pb_data     => s_pb_data,
+    o_ts_seconds  => s_ts_seconds,
+    o_ts_fraction => s_ts_fraction,
     o_sound_on    => s_sound_on,
     o_sg_note     => s_sg_note,
     o_sg_vel      => s_sg_vel,
@@ -226,6 +244,23 @@ begin
 
   input_gen: process
   begin
+    s_pb_ready(0)   <= '0';
+    s_pb_data(0)    <= (others => '0');
+    s_pb_ready(1)   <= '0';
+    s_pb_data(1)    <= (others => '0');
+    s_pb_ready(2)   <= '0';
+    s_pb_data(2)    <= (others => '0');
+    s_pb_ready(3)   <= '0';
+    s_pb_data(3)    <= (others => '0');
+    s_pb_ready(4)   <= '0';
+    s_pb_data(4)    <= (others => '0');
+    s_pb_ready(5)   <= '0';
+    s_pb_data(5)    <= (others => '0');
+    s_pb_ready(6)   <= '0';
+    s_pb_data(6)    <= (others => '0');
+    s_pb_ready(7)   <= '0';
+    s_pb_data(7)    <= (others => '0');
+
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '1';
