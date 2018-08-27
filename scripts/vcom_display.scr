@@ -1,0 +1,3 @@
+vcom vhd/src/display/display_mux_3.vhd
+vcom vhd/src/display/display_mux_4.vhd
+vcom vhd/src/display/display_ctrl.vhd
