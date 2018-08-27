@@ -22,8 +22,10 @@ architecture TEST of TB_CORE is
     i_btn_right     : in  std_logic;
 
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0)
-    );
+    i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
+
+    o_display_a     : out t_display_array
+  );
   end component;
 
   constant c_ext_clock    : integer := 50000000;
@@ -40,9 +42,11 @@ architecture TEST of TB_CORE is
   signal s_tr_mute  : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_tr_solo  : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
+  signal s_display  : t_display_array;
+
 begin
   DUT : SEQUENCER_CORE
-  port map(s_clk, s_rst, s_btn1, s_btn2, s_btn3, s_btn4, s_tr_mute, s_tr_solo);
+  port map(s_clk, s_rst, s_btn1, s_btn2, s_btn3, s_btn4, s_tr_mute, s_tr_solo, s_display);
 
   clock_gen : process
   begin
