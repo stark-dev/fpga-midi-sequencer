@@ -15,14 +15,24 @@ package UTILS_PKG is
   function xor_reduce(datain : std_logic_vector) return std_logic;
 
   -- custom types
+
+  -- core fsm
+  type t_core_fsm     is (st_reset, st_init, st_idle, st_play, st_stop, st_menu);
+
+  -- menu option
+  type t_menu_option  is (op_track, op_patch, op_track_vol, op_pan, op_poly, op_omni);
+
+  -- midi commands
   type t_midi_cmd is (
     midi_unknown, midi_note_on, midi_note_off, midi_ctrl_ch, midi_prg_ch
   );
 
+  -- channel modes
   type t_ch_mode is (
     ctrl_unknown, ctrl_all_sn_off, ctrl_rst, ctrl_all_nt_off, ctrl_omni_on, ctrl_omni_off, ctrl_mono_on, ctrl_poly_on
   );
 
+  -- display values
   type t_display_out is (
     ds_A, ds_B, ds_C, ds_D, ds_E, ds_F, ds_G, ds_H,
     ds_I, ds_J, ds_K, ds_L, ds_M, ds_N, ds_O, ds_P,

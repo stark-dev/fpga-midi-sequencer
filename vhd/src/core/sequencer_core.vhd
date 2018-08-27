@@ -42,14 +42,8 @@ architecture BHV of SEQUENCER_CORE is
 --------------------------------------------------------------------------------
 -- types
 --------------------------------------------------------------------------------
-  -- core fsm
-  type t_core_fsm     is (st_reset, st_init, st_idle, st_play, st_stop, st_menu);
-
   -- track status registers
   type t_track_status is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_ST_SIZE - 1 downto 0);
-
-  -- menu option
-  type t_menu_option  is (op_track, op_patch, op_track_vol, op_pan, op_poly, op_omni);
 
 --------------------------------------------------------------------------------
 -- components
@@ -128,6 +122,24 @@ port (
   i_btn         : in  std_logic;
   o_long        : out std_logic;
   o_short       : out std_logic
+);
+end component;
+
+component DISPLAY_CTRL is
+port (
+  i_state       : in  t_core_fsm;
+  i_menu        : in  t_menu_option;
+  i_ts_frac     : in  std_logic_vector(ST_TSF_SIZE - 1 downto 0);
+  i_ts_secs     : in  std_logic_vector(ST_TSS_SIZE - 1 downto 0);
+  i_main_vol    : in  std_logic_vector(ST_VOL_SIZE - 1 downto 0);
+  i_active_tr   : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+  i_track_omni  : in  std_logic;
+  i_track_poly  : in  std_logic;
+  i_track_rec   : in  std_logic;
+  i_track_pan   : in  std_logic_vector(TR_PAN_SIZE - 1 downto 0);
+  i_track_vol   : in  std_logic_vector(TR_VOL_SIZE - 1 downto 0);
+  i_track_patch : in  std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  o_display_a   : out t_display_array
 );
 end component;
 
@@ -217,12 +229,6 @@ end component;
   signal s_track_vol      : std_logic_vector(TR_VOL_SIZE - 1 downto 0);
   signal s_track_patch    : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
 
-  signal s_ts_frac_1      : std_logic_vector(3 downto 0);
-  signal s_ts_frac_2      : std_logic_vector(3 downto 0);
-
-  signal s_ts_secs_1      : std_logic_vector(3 downto 0);
-  signal s_ts_secs_2      : std_logic_vector(3 downto 0);
-
 begin
 
   -- output assignment
@@ -276,12 +282,6 @@ begin
   s_track_pan       <= s_tr_status(to_integer(s_active_tr))(TR_PAN_RANGE);
   s_track_vol       <= s_tr_status(to_integer(s_active_tr))(TR_VOL_RANGE);
   s_track_patch     <= s_tr_status(to_integer(s_active_tr))(TR_PATCH_RANGE);
-
-  s_ts_frac_1       <= s_ts_frac(ST_TSF_SIZE - 5 downto ST_TSF_SIZE - 8);
-  s_ts_frac_2       <= s_ts_frac(ST_TSF_SIZE - 1 downto ST_TSF_SIZE - 4);
-
-  s_ts_secs_1       <= s_ts_secs(3 downto 0);
-  s_ts_secs_2       <= s_ts_secs(7 downto 4);
 
   -- components
   TS_GEN : TIMESTAMP_GEN
@@ -386,6 +386,23 @@ begin
     i_btn         => i_btn_right,
     o_long        => s_btn_r_l,
     o_short       => s_btn_r_s
+  );
+
+  DISPLAY_C : DISPLAY_CTRL
+  port map(
+    i_state       => s_fsm_status,
+    i_menu        => s_menu_option,
+    i_ts_frac     => s_ts_frac,
+    i_ts_secs     => s_ts_secs,
+    i_main_vol    => std_logic_vector(s_main_vol),
+    i_active_tr   => std_logic_vector(s_active_tr),
+    i_track_omni  => s_track_omni,
+    i_track_poly  => s_track_poly,
+    i_track_rec   => s_track_rec,
+    i_track_pan   => s_track_pan,
+    i_track_vol   => s_track_vol,
+    i_track_patch => s_track_patch,
+    o_display_a   => s_display_array
   );
 
   -- processes
@@ -570,295 +587,6 @@ begin
         end case;
       end if;
     end if;
-  end process;
-
-  p_display_5_control: process(s_fsm_status, s_tr_status, s_ts_frac_1)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        if s_track_rec = '0' then
-          s_display_array(5)  <= ds_P;
-        else
-          s_display_array(5)  <= ds_R;
-        end if;
-      when st_play    =>
-        s_display_array(5)  <= ds_S;
-      when others     =>
-        s_display_array(5)  <= ds_OFF;
-    end case;
-  end process;
-
-  p_display_4_control: process(s_fsm_status, s_ts_secs_2)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        s_display_array(4)  <= ds_P;
-      when st_play    =>
-        case s_ts_secs_2 is
-          when "0000" =>
-            s_display_array(4)  <= ds_0;
-          when "0001" =>
-            s_display_array(4)  <= ds_1;
-          when "0010" =>
-            s_display_array(4)  <= ds_2;
-          when "0011" =>
-            s_display_array(4)  <= ds_3;
-          when "0100" =>
-            s_display_array(4)  <= ds_4;
-          when "0101" =>
-            s_display_array(4)  <= ds_5;
-          when "0110" =>
-            s_display_array(4)  <= ds_6;
-          when "0111" =>
-            s_display_array(4)  <= ds_7;
-          when "1000" =>
-            s_display_array(4)  <= ds_8;
-          when "1001" =>
-            s_display_array(4)  <= ds_9;
-          when "1010" =>
-            s_display_array(4)  <= ds_A;
-          when "1011" =>
-            s_display_array(4)  <= ds_B;
-          when "1100" =>
-            s_display_array(4)  <= ds_C;
-          when "1101" =>
-            s_display_array(4)  <= ds_D;
-          when "1110" =>
-            s_display_array(4)  <= ds_E;
-          when "1111" =>
-            s_display_array(4)  <= ds_F;
-          when others =>
-            s_display_array(4)  <= ds_OFF;
-        end case;
-      when others     =>
-        s_display_array(4)  <= ds_OFF;
-    end case;
-  end process;
-
-  p_display_3_control: process(s_fsm_status, s_track_patch, s_ts_secs_1)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        case s_track_patch(6 downto 4) is
-          when "000" =>
-            s_display_array(3)  <= ds_0;
-          when "001" =>
-            s_display_array(3)  <= ds_1;
-          when "010" =>
-            s_display_array(3)  <= ds_2;
-          when "011" =>
-            s_display_array(3)  <= ds_3;
-          when "100" =>
-            s_display_array(3)  <= ds_4;
-          when "101" =>
-            s_display_array(3)  <= ds_5;
-          when "110" =>
-            s_display_array(3)  <= ds_6;
-          when "111" =>
-            s_display_array(3)  <= ds_7;
-          when others =>
-            s_display_array(3)  <= ds_OFF;
-        end case;
-      when st_play    =>
-        case s_ts_secs_1 is
-          when "0000" =>
-            s_display_array(3)  <= ds_0;
-          when "0001" =>
-            s_display_array(3)  <= ds_1;
-          when "0010" =>
-            s_display_array(3)  <= ds_2;
-          when "0011" =>
-            s_display_array(3)  <= ds_3;
-          when "0100" =>
-            s_display_array(3)  <= ds_4;
-          when "0101" =>
-            s_display_array(3)  <= ds_5;
-          when "0110" =>
-            s_display_array(3)  <= ds_6;
-          when "0111" =>
-            s_display_array(3)  <= ds_7;
-          when "1000" =>
-            s_display_array(3)  <= ds_8;
-          when "1001" =>
-            s_display_array(3)  <= ds_9;
-          when "1010" =>
-            s_display_array(3)  <= ds_A;
-          when "1011" =>
-            s_display_array(3)  <= ds_B;
-          when "1100" =>
-            s_display_array(3)  <= ds_C;
-          when "1101" =>
-            s_display_array(3)  <= ds_D;
-          when "1110" =>
-            s_display_array(3)  <= ds_E;
-          when "1111" =>
-            s_display_array(3)  <= ds_F;
-          when others =>
-            s_display_array(3)  <= ds_OFF;
-        end case;
-      when others     =>
-        s_display_array(3)  <= ds_OFF;
-    end case;
-  end process;
-
-  p_display_2_control: process(s_fsm_status, s_track_patch)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        case s_track_patch(3 downto 0) is
-          when "0000" =>
-            s_display_array(2)  <= ds_0;
-          when "0001" =>
-            s_display_array(2)  <= ds_1;
-          when "0010" =>
-            s_display_array(2)  <= ds_2;
-          when "0011" =>
-            s_display_array(2)  <= ds_3;
-          when "0100" =>
-            s_display_array(2)  <= ds_4;
-          when "0101" =>
-            s_display_array(2)  <= ds_5;
-          when "0110" =>
-            s_display_array(2)  <= ds_6;
-          when "0111" =>
-            s_display_array(2)  <= ds_7;
-          when "1000" =>
-            s_display_array(2)  <= ds_8;
-          when "1001" =>
-            s_display_array(2)  <= ds_9;
-          when "1010" =>
-            s_display_array(2)  <= ds_A;
-          when "1011" =>
-            s_display_array(2)  <= ds_B;
-          when "1100" =>
-            s_display_array(2)  <= ds_C;
-          when "1101" =>
-            s_display_array(2)  <= ds_D;
-          when "1110" =>
-            s_display_array(2)  <= ds_E;
-          when "1111" =>
-            s_display_array(2)  <= ds_F;
-          when others =>
-            s_display_array(2)  <= ds_OFF;
-        end case;
-      when st_play    =>
-        s_display_array(2)  <= ds_F;
-      when others     =>
-        s_display_array(2)  <= ds_OFF;
-    end case;
-  end process;
-
-  p_display_1_control: process(s_fsm_status, s_ts_frac_2)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        s_display_array(1)  <= ds_T;
-      when st_play    =>
-        case s_ts_frac_2 is
-          when "0000" =>
-            s_display_array(1)  <= ds_0;
-          when "0001" =>
-            s_display_array(1)  <= ds_1;
-          when "0010" =>
-            s_display_array(1)  <= ds_2;
-          when "0011" =>
-            s_display_array(1)  <= ds_3;
-          when "0100" =>
-            s_display_array(1)  <= ds_4;
-          when "0101" =>
-            s_display_array(1)  <= ds_5;
-          when "0110" =>
-            s_display_array(1)  <= ds_6;
-          when "0111" =>
-            s_display_array(1)  <= ds_7;
-          when "1000" =>
-            s_display_array(1)  <= ds_8;
-          when "1001" =>
-            s_display_array(1)  <= ds_9;
-          when "1010" =>
-            s_display_array(1)  <= ds_A;
-          when "1011" =>
-            s_display_array(1)  <= ds_B;
-          when "1100" =>
-            s_display_array(1)  <= ds_C;
-          when "1101" =>
-            s_display_array(1)  <= ds_D;
-          when "1110" =>
-            s_display_array(1)  <= ds_E;
-          when "1111" =>
-            s_display_array(1)  <= ds_F;
-          when others =>
-            s_display_array(1)  <= ds_OFF;
-        end case;
-      when others     =>
-        s_display_array(1)  <= ds_OFF;
-    end case;
-  end process;
-
-  p_display_0_control: process(s_fsm_status, s_active_tr, s_ts_frac_1)
-  begin
-    case s_fsm_status is
-      when st_idle    =>
-        case s_active_tr is
-          when "000" =>
-            s_display_array(0)  <= ds_0;
-          when "001" =>
-            s_display_array(0)  <= ds_1;
-          when "010" =>
-            s_display_array(0)  <= ds_2;
-          when "011" =>
-            s_display_array(0)  <= ds_3;
-          when "100" =>
-            s_display_array(0)  <= ds_4;
-          when "101" =>
-            s_display_array(0)  <= ds_5;
-          when "110" =>
-            s_display_array(0)  <= ds_6;
-          when "111" =>
-            s_display_array(0)  <= ds_7;
-          when others =>
-            s_display_array(0)  <= ds_OFF;
-        end case;
-      when st_play    =>
-        case s_ts_frac_1 is
-          when "0000" =>
-            s_display_array(0)  <= ds_0;
-          when "0001" =>
-            s_display_array(0)  <= ds_1;
-          when "0010" =>
-            s_display_array(0)  <= ds_2;
-          when "0011" =>
-            s_display_array(0)  <= ds_3;
-          when "0100" =>
-            s_display_array(0)  <= ds_4;
-          when "0101" =>
-            s_display_array(0)  <= ds_5;
-          when "0110" =>
-            s_display_array(0)  <= ds_6;
-          when "0111" =>
-            s_display_array(0)  <= ds_7;
-          when "1000" =>
-            s_display_array(0)  <= ds_8;
-          when "1001" =>
-            s_display_array(0)  <= ds_9;
-          when "1010" =>
-            s_display_array(0)  <= ds_A;
-          when "1011" =>
-            s_display_array(0)  <= ds_B;
-          when "1100" =>
-            s_display_array(0)  <= ds_C;
-          when "1101" =>
-            s_display_array(0)  <= ds_D;
-          when "1110" =>
-            s_display_array(0)  <= ds_E;
-          when "1111" =>
-            s_display_array(0)  <= ds_F;
-          when others =>
-            s_display_array(0)  <= ds_OFF;
-        end case;
-      when others     =>
-        s_display_array(0)  <= ds_OFF;
-    end case;
   end process;
 
   p_active_track_enc: process(s_active_tr)
