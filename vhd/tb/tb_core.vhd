@@ -741,6 +741,167 @@ begin
     s_tx_data       <= "01111111";
     wait for 12*c_uart_period;
 
+    -- pause
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- menu
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 320 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- inc track
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '0';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- inc track
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '0';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- exit menu
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- note on : status
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "10010001";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "10010001";
+    wait for 12*c_uart_period;
+
+    -- note on : key
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "00001100";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "00001100";
+    wait for 12*c_uart_period;
+
+    -- note on : vel
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "00100101";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "00100101";
+    wait for 12*c_uart_period;
+
+    -- note off : status
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "10000001";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "10000001";
+    wait for 12*c_uart_period;
+
+    -- note off : key
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "00001100";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "00001100";
+    wait for 12*c_uart_period;
+
+    -- note off : vel
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '1';
+    s_tx_data       <= "01111111";
+    wait for 2*c_clock_half_p;
+
+    s_uart_en       <= '1';
+    s_tx_load_en    <= '0';
+    s_tx_data       <= "01111111";
+    wait for 12*c_uart_period;
+
     wait;
   end process;
 
