@@ -240,7 +240,7 @@ begin
     end case;
   end process;
 
-  p_display_2_control: process(i_state, s_disp_2_4)
+  p_display_2_control: process(i_state, i_menu, s_disp_2_4)
   begin
     case i_state is
       when st_idle    =>
