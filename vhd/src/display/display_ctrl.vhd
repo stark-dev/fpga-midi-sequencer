@@ -308,7 +308,7 @@ begin
       when st_menu    =>
         case i_menu is
           when op_track     =>
-            s_display_array(0)  <= s_disp_0_4;
+            s_display_array(0)  <= s_disp_0_3;
           when op_patch     =>
             s_display_array(0)  <= s_disp_0_4;
           when op_track_vol =>
