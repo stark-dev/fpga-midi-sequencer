@@ -5,6 +5,7 @@ use ieee.numeric_std.all;
 package UTILS_PKG is
 
   -- constants
+  constant DISPLAY_SIZE : integer := 6;
 
   -- functions
   function log2 (X : positive)  return natural;                   -- Y = log2(X)
@@ -21,6 +22,16 @@ package UTILS_PKG is
   type t_ch_mode is (
     ctrl_unknown, ctrl_all_sn_off, ctrl_rst, ctrl_all_nt_off, ctrl_omni_on, ctrl_omni_off, ctrl_mono_on, ctrl_poly_on
   );
+
+  type t_display_out is (
+    ds_A, ds_B, ds_C, ds_D, ds_E, ds_F, ds_G, ds_H,
+    ds_I, ds_J, ds_K, ds_L, ds_M, ds_N, ds_O, ds_P,
+    ds_Q, ds_R, ds_S, ds_T, ds_U, ds_V, ds_W, ds_X,
+    ds_Y, ds_Z, ds_0, ds_1, ds_2, ds_3, ds_4, ds_5,
+    ds_6, ds_7, ds_8, ds_9, ds_OFF
+  );
+
+  type t_display_array is array (DISPLAY_SIZE - 1 downto 0) of t_display_out;
 
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;
