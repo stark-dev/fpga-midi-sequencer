@@ -24,88 +24,16 @@ architecture TEST of TB_CORE is
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
     i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
-    i_midi_ready    : in  t_midi_ready;
-    i_midi_data     : in  t_midi_data;
-
-    o_sg_note       : out t_sg_note;
-    o_sg_vel        : out t_sg_vel;
-    o_sg_start      : out t_sg_start;
-    o_sg_stop       : out t_sg_stop;
-
     o_display_a     : out t_display_array
   );
   end component;
 
-  component UART_RX is
-    generic (
-      g_ext_clock   : natural := 500000000;
-      g_baud_rate   : natural := 9600;
-      g_databits    : natural := 8;
-      g_parity      : boolean := false;
-      g_parity_odd  : boolean := false;
-      g_stop_bits   : integer := 1
-    );
-    port (
-      i_uart_en     : in    std_logic;  -- UART enable
-      i_uart_rst_n  : in    std_logic;  -- UART reset
-      i_uart_in     : in    std_logic;  -- UART IN port
-      i_clk         : in    std_logic;  -- external clock
-      o_uart_data   : out   std_logic_vector(g_databits-1 downto 0);
-      o_uart_end    : out   std_logic;
-      o_uart_err    : out   std_logic
-    );
-  end component;
-
-  component MIDI_EVT_FILTER is
-  port (
-    i_clk         : in  std_logic;
-    i_reset_n     : in  std_logic;
-    i_new_data    : in  std_logic;
-    i_data_in     : in  std_logic_vector(7 downto 0);
-
-    o_midi_msg    : out std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-    o_midi_ready  : out std_logic
-    );
-  end component;
-
-  component UART_TX is
-    generic (
-      g_ext_clock   : natural := 500000000;
-      g_baud_rate   : natural := 9600;
-      g_databits    : natural := 8;
-      g_parity      : boolean := false;
-      g_parity_odd  : boolean := false;
-      g_stop_bits   : integer := 1
-    );
-    port (
-      i_uart_en     : in    std_logic;  -- UART enable
-      i_uart_rst_n  : in    std_logic;  -- UART reset
-      i_data_ld_en  : in    std_logic;  -- parallel data load enable
-      i_data_in     : in    std_logic_vector(g_databits-1 downto 0);
-      i_clk         : in    std_logic;  -- external clock
-      o_uart_out    : out   std_logic;
-      o_uart_end    : out   std_logic
-    );
-  end component;
-
-  -- common
   constant c_ext_clock    : integer := 50000000;
   constant c_clock        : integer := 1000000000/(2*c_ext_clock);
   constant c_clock_half_p : time := c_clock * 1 ns;
-  -- uart constants
-  constant c_baud_rate    : integer := 115200;
-  constant c_uart         : integer := 1000000000/c_baud_rate;
-  constant c_databits     : integer := 8;
-  constant c_parity       : boolean := false;
-  constant c_parity_odd   : boolean := false;
-  constant c_stop_bits    : integer := 0;
-  constant c_uart_period  : time := c_uart * 1 ns;
 
-  -- common
   signal s_clk      : std_logic;
   signal s_rst      : std_logic;
-
-  -- interface
   signal s_btn1     : std_logic;
   signal s_btn2     : std_logic;
   signal s_btn3     : std_logic;
@@ -116,101 +44,9 @@ architecture TEST of TB_CORE is
 
   signal s_display  : t_display_array;
 
-  -- uart tx
-  signal s_uart_en      : std_logic;
-  signal s_tx_load_en   : std_logic;
-  signal s_tx_data      : std_logic_vector(c_databits-1 downto 0);
-  signal s_tx_data_out  : std_logic;
-  signal s_uart_tx_end  : std_logic;
-
-  -- uart rx
-  signal s_rx_data      : std_logic_vector(c_databits-1 downto 0);
-  signal s_uart_rx_end  : std_logic;
-  signal s_uart_rx_err  : std_logic;
-
-  -- midi evt filter
-  signal s_evt_out      : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-  signal s_evt_ready    : std_logic;
-
-  -- sound gen
-  signal s_midi_ready   : t_midi_ready;
-  signal s_midi_data    : t_midi_data;
-  signal s_sg_note      : t_sg_note;
-  signal s_sg_vel       : t_sg_vel;
-  signal s_sg_start     : t_sg_start;
-  signal s_sg_stop      : t_sg_stop;
-
 begin
-  s_midi_ready(0) <= s_evt_ready;
-  s_midi_data(0)  <= s_evt_out;
-
-
   DUT : SEQUENCER_CORE
-  port map(
-    i_clk         => s_clk,
-    i_reset_n     => s_rst,
-    i_btn_left    => s_btn1,
-    i_btn_up      => s_btn2,
-    i_btn_down    => s_btn3,
-    i_btn_right   => s_btn4,
-    i_tr_mute     => s_tr_mute,
-    i_tr_solo     => s_tr_solo,
-    i_midi_ready  => s_midi_ready,
-    i_midi_data   => s_midi_data,
-    o_sg_note     => s_sg_note,
-    o_sg_vel      => s_sg_vel,
-    o_sg_start    => s_sg_start,
-    o_sg_stop     => s_sg_stop,
-    o_display_a   => s_display
-  );
-
-  EVT: MIDI_EVT_FILTER
-  port map(
-    i_clk         => s_clk,
-    i_reset_n     => s_rst,
-    i_new_data    => s_uart_rx_end,
-    i_data_in     => s_rx_data,
-    o_midi_msg    => s_evt_out,
-    o_midi_ready  => s_evt_ready
-  );
-
-  TX: UART_TX
-  generic map (
-    g_ext_clock  => c_ext_clock,
-    g_baud_rate  => c_baud_rate,
-    g_databits   => c_databits,
-    g_parity     => c_parity,
-    g_parity_odd => c_parity_odd,
-    g_stop_bits  => c_stop_bits
-  )
-  port map (
-    i_uart_en     => s_uart_en,
-    i_uart_rst_n  => s_rst,
-    i_data_ld_en  => s_tx_load_en,
-    i_data_in     => s_tx_data,
-    i_clk         => s_clk,
-    o_uart_out    => s_tx_data_out,
-    o_uart_end    => s_uart_tx_end
-  );
-
-  RX: UART_RX
-  generic map (
-    g_ext_clock  => c_ext_clock,
-    g_baud_rate  => c_baud_rate,
-    g_databits   => c_databits,
-    g_parity     => c_parity,
-    g_parity_odd => c_parity_odd,
-    g_stop_bits  => c_stop_bits
-  )
-  port map (
-    i_uart_en     => s_uart_en,
-    i_uart_rst_n  => s_rst,
-    i_uart_in     => s_tx_data_out,
-    i_clk         => s_clk,
-    o_uart_data   => s_rx_data,
-    o_uart_end    => s_uart_rx_end,
-    o_uart_err    => s_uart_rx_err
-  );
+  port map(s_clk, s_rst, s_btn1, s_btn2, s_btn3, s_btn4, s_tr_mute, s_tr_solo, s_display);
 
   clock_gen : process
   begin
@@ -229,10 +65,6 @@ begin
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
-
-    s_uart_en       <= '0';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "00000000";
     wait for 100 ns;
 
     --reset
@@ -243,10 +75,6 @@ begin
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
-
-    s_uart_en       <= '0';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "00000000";
     wait for 100 ns;
 
     s_rst     <= '1';
@@ -256,10 +84,6 @@ begin
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "00000000";
     wait for 100 ns;
 
     -- very short press (not detected)
@@ -622,85 +446,6 @@ begin
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
-
-    -- start midi tx
-
-    -- unknown command
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "00000000";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "00000000";
-    wait for 12*c_uart_period;
-
-    -- note on : status
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "10010001";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "10010001";
-    wait for 12*c_uart_period;
-
-    -- note on : key
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "01000000";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "01000000";
-    wait for 12*c_uart_period;
-
-    -- note on : vel
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "01111111";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "01111111";
-    wait for 12*c_uart_period;
-
-    -- note off : status
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "10000001";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "10000001";
-    wait for 12*c_uart_period;
-
-    -- note off : key
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "01000000";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "01000000";
-    wait for 12*c_uart_period;
-
-    -- note off : vel
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '1';
-    s_tx_data       <= "01111111";
-    wait for 2*c_clock_half_p;
-
-    s_uart_en       <= '1';
-    s_tx_load_en    <= '0';
-    s_tx_data       <= "01111111";
-    wait for 12*c_uart_period;
 
     wait;
   end process;
