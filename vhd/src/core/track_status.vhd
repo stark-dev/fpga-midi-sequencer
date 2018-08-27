@@ -55,7 +55,7 @@ architecture BHV of TRACK_STATUS is
   constant c_min_vol      : integer := 0;
 
   constant c_max_pan      : integer := 2**TR_PAN_SIZE - 1;
-  constant c_mid_pan      : integer := c_max_pan / 2;
+  constant c_mid_pan      : integer := (c_max_pan / 2) + 1;
   constant c_min_pan      : integer := 0;
 
 --------------------------------------------------------------------------------
