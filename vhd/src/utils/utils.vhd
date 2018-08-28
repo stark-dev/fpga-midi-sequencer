@@ -34,6 +34,10 @@ package UTILS_PKG is
   -- display constants
   constant DISPLAY_SIZE   : integer := 6;
 
+  -- memory constants (memory byte addressable)
+  constant MEMORY_SIZE    : integer := 26;    -- 64 MB
+  constant MEMORY_TR_SIZE : integer := 8192;  -- 8KB per track (1k sample per track)
+
   -- functions
   function log2 (X : positive)  return natural;                   -- Y = log2(X)
   function up_int_log2 (X : positive) return natural;             -- log2 rounded to upper int
