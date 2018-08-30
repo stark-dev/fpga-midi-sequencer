@@ -23,7 +23,7 @@ port (
   o_pb_data       : out t_midi_data;
   o_init_ready    : out std_logic;
   o_mem_error     : out std_logic
-);
+);  -- TODO add playback end as vector for all tracks (define end sample)
 end entity;
 
 architecture BHV of PLAYBACK_QUEUE is
@@ -135,6 +135,7 @@ begin
 
   o_mem_address <= std_logic_vector(s_load_data_add);
   o_mem_error   <= s_mem_error;
+  o_init_ready  <= s_init_ready;
 
   s_mem_error   <= or_reduce(s_sample_count_tc);
 
