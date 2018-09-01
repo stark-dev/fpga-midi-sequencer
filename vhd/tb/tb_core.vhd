@@ -102,6 +102,46 @@ architecture TEST of TB_CORE is
     );
   end component;
 
+  component PLAYBACK_QUEUE is
+  port (
+    i_clk           : in  std_logic;
+    i_reset_n       : in  std_logic;
+
+    i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
+    i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
+
+    i_data_ready    : in  std_logic;
+    i_load_data     : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+
+    o_mem_load      : out std_logic;
+    o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+
+    o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    o_pb_data       : out t_midi_data;
+    o_init_ready    : out std_logic;
+    o_mem_error     : out std_logic
+  );
+end component;
+
+component SAMPLE_MEMORY is
+generic (
+  g_mem_size      : integer := 8
+);
+port (
+  i_clk           : in  std_logic;
+  i_reset_n       : in  std_logic;
+  i_enable        : in  std_logic;
+  i_read_en       : in  std_logic;
+  i_write_en      : in  std_logic;
+  i_address       : in  std_logic_vector(g_mem_size - 1 downto 0);
+  i_load_data     : in  std_logic_vector(31 downto 0);
+  o_data          : out std_logic_vector(31 downto 0);
+  o_mem_ready     : out std_logic;
+  o_mem_error     : out std_logic
+);
+end component;
+
   -- common
   constant c_ext_clock    : integer := 50000000;
   constant c_clock        : integer := 1000000000/(2*c_ext_clock);
@@ -164,6 +204,17 @@ architecture TEST of TB_CORE is
 
   -- ext module ready
   signal s_pb_q_ready   : std_logic;
+
+  -- playback queue and memory
+  signal s_data_ready     : std_logic;
+  signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+
+  signal s_mem_load       : std_logic;
+  signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  signal s_mem_error      : std_logic;
+
+  signal s_mem_enable     : std_logic;
+  signal s_mem_write      : std_logic;
 
 begin
   s_midi_ready    <= s_evt_ready;
@@ -244,6 +295,42 @@ begin
     o_uart_err    => s_uart_rx_err
   );
 
+  PB_Q : PLAYBACK_QUEUE
+  port map (
+    i_clk           => s_clk,
+    i_reset_n       => s_rst,
+
+    i_ts_seconds    => s_ts_seconds,
+    i_ts_fraction   => s_ts_fraction,
+
+    i_data_ready    => s_data_ready,
+    i_load_data     => s_mem_data,
+
+    o_mem_load      => s_mem_load,
+    o_mem_address   => s_mem_address,
+
+    o_pb_ready      => s_pb_ready,
+    o_pb_end        => s_pb_end,
+    o_pb_data       => s_pb_data,
+    o_init_ready    => s_pb_q_ready,
+    o_mem_error     => s_mem_error
+  );
+
+  SAMPLE_MEM : SAMPLE_MEMORY
+  generic map ( 10 )
+  port map (
+    i_clk           => s_clk,
+    i_reset_n       => s_rst,
+    i_enable        => s_mem_enable,
+    i_read_en       => s_mem_load,
+    i_write_en      => s_mem_write,
+    i_address       => s_mem_address(11 downto 2), -- 4 byte align
+    i_load_data     => s_pb_data(0),
+    o_data          => s_mem_data,
+    o_mem_ready     => s_data_ready,
+    o_mem_error     => s_mem_error
+  );
+
   clock_gen : process
   begin
     s_clk <= '0';
@@ -254,23 +341,6 @@ begin
 
   input_gen: process
   begin
-    s_pb_ready(0)   <= '0';
-    s_pb_data(0)    <= (others => '0');
-    s_pb_ready(1)   <= '0';
-    s_pb_data(1)    <= (others => '0');
-    s_pb_ready(2)   <= '0';
-    s_pb_data(2)    <= (others => '0');
-    s_pb_ready(3)   <= '0';
-    s_pb_data(3)    <= (others => '0');
-    s_pb_ready(4)   <= '0';
-    s_pb_data(4)    <= (others => '0');
-    s_pb_ready(5)   <= '0';
-    s_pb_data(5)    <= (others => '0');
-    s_pb_ready(6)   <= '0';
-    s_pb_data(6)    <= (others => '0');
-    s_pb_ready(7)   <= '0';
-    s_pb_data(7)    <= (others => '0');
-
     s_rst     <= '1';
     s_btn1    <= '1';
     s_btn2    <= '1';
@@ -282,6 +352,8 @@ begin
     s_uart_en       <= '0';
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
+
+    s_mem_enable    <= '0';
     wait for 100 ns;
 
     --reset
@@ -296,6 +368,8 @@ begin
     s_uart_en       <= '0';
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
+
+    s_mem_enable    <= '0';
     wait for 100 ns;
 
     s_rst     <= '1';
@@ -309,7 +383,9 @@ begin
     s_uart_en       <= '1';
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
-    wait for 100 ns;
+
+    s_mem_enable    <= '1';
+    wait for 2000 ns; -- allow load of samples
 
     -- very short press (not detected)
     s_rst     <= '1';
