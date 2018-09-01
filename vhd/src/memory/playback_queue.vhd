@@ -53,9 +53,12 @@ architecture BHV of PLAYBACK_QUEUE is
     );
   end component;
 
-  constant c_memory_tr_cnt  : integer := up_int_log2(MEMORY_TR_SIZE) / 8; -- each sample is 8 bytes
+  -- constant c_mem_track_size : integer := MEMORY_TR_SIZE;
+  constant c_mem_track_size : integer := 512;
 
-  type t_queue_fsm is (st_reset, st_init, st_idle, st_event, st_load_data, st_wait_data, st_load_ts, st_wait_ts, st_error);
+  constant c_memory_tr_cnt  : integer := up_int_log2(c_mem_track_size / 8); -- each sample is 4 bytes (data) + 4 bytes (ts)
+
+  type t_queue_fsm is (st_reset, st_init, st_ready, st_idle, st_scan, st_event, st_load_data, st_wait_data, st_load_ts, st_wait_ts, st_error);
   type t_sample_cnt is array (SEQ_TRACKS - 1 downto 0) of unsigned(c_memory_tr_cnt - 1 downto 0);
 
   signal s_evt_data_r       : t_midi_data;
@@ -66,10 +69,7 @@ architecture BHV of PLAYBACK_QUEUE is
   signal s_load_data_add    : unsigned(MEMORY_SIZE - 1 downto 0);
 
   signal s_load_data_en     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_load_data        : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
-
   signal s_load_ts_en       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_load_ts          : std_logic_vector(SEQ_TIME_SIZE-1 downto 0);
 
   signal s_q_state          : t_queue_fsm;
 
@@ -101,7 +101,7 @@ begin
       i_clk         => i_clk,
       i_reset_n     => i_reset_n,
       i_load_en     => s_load_data_en(i),
-      i_par_in      => s_load_data,
+      i_par_in      => i_load_data,
       o_par_out     => s_evt_data_r(i)
     );
   end generate;
@@ -114,7 +114,7 @@ begin
       i_clk         => i_clk,
       i_reset_n     => i_reset_n,
       i_load_en     => s_load_ts_en(i),
-      i_par_in      => s_load_ts,
+      i_par_in      => i_load_data,
       o_par_out     => s_evt_ts_r(i)
     );
   end generate;
@@ -166,26 +166,32 @@ begin
   begin
     if i_reset_n = '0' then
       s_q_state <= st_reset;
-    else
+    elsif i_clk'event and i_clk = '1' then
       case s_q_state is
         when st_reset     =>
           s_q_state <= st_init;
         when st_init      =>
-          if s_init_ready = '1' then
-            s_q_state <= st_idle;
-          else
-            s_q_state <= st_wait_data;
-          end if;
+          s_q_state <= st_wait_data;
+        when st_ready     =>
+          s_q_state <= st_idle;
         when st_idle      =>
           if s_ts_match = '1' then
             s_q_state <= st_event;
           elsif s_mem_error = '1' then
             s_q_state <= st_error;
           else
-            s_q_state <= st_idle;
+            s_q_state <= st_scan;
           end if;
         when st_event     =>
           s_q_state <= st_wait_data;
+        when st_scan      =>
+          if s_init_ready = '1' then
+            s_q_state <= st_idle;
+          elsif s_track_scan_tc = '1' then
+            s_q_state <= st_ready;
+          else
+            s_q_state <= st_init;
+          end if;
         when st_wait_data =>
           if i_data_ready = '1' then
             s_q_state <= st_load_data;
@@ -201,11 +207,7 @@ begin
             s_q_state <= st_wait_ts;
           end if;
         when st_load_ts   =>
-          if s_init_ready = '0' then
-            s_q_state <= st_init;
-          else
-            s_q_state <= st_idle;
-          end if;
+          s_q_state <= st_scan;
         when st_error =>
           s_q_state <= st_error;
         when others       =>
@@ -214,13 +216,13 @@ begin
     end if;
   end process;
 
-  p_fsm_ctrl: process(s_q_state, s_track_scan_tc)
+  p_fsm_ctrl: process(s_q_state, s_track_scan, s_sample_count)
   begin
     o_mem_load        <= '0';  -- load request
     s_load_data_add   <= (others => '0');
 
     s_track_scan_rs   <= '1';
-    s_track_scan_en   <= '1';
+    s_track_scan_en   <= '0';
 
     for i in 0 to SEQ_TRACKS - 1 loop
       o_pb_ready(i)        <= '0';
@@ -234,10 +236,11 @@ begin
     s_init_ready_rst  <= '0';
     s_init_ready_set  <= '0';
 
-    -- (to_integer(s_track_scan)) <= '0';
-
     case s_q_state is
       when st_reset     =>
+        o_mem_load        <= '0';  -- load request
+        s_load_data_add   <= (others => '0');
+
         s_track_scan_rs   <= '0';
         s_track_scan_en   <= '0';
 
@@ -254,35 +257,35 @@ begin
         s_init_ready_set  <= '0';
 
       when st_init      =>
-        s_track_scan_en   <= '1';
-        s_init_ready_rst  <= '0';
-        if s_track_scan_tc = '1' then
-          s_init_ready_set <= '1';
-        else
-          s_init_ready_set <= '0';
-        end if;
+
+      when st_ready     =>
+        s_init_ready_set  <= '1';
+        s_track_scan_rs   <= '0';
 
       when st_idle      =>
 
       when st_event     =>
-        s_track_scan_en     <= '0';
+        o_pb_ready(to_integer(s_track_scan)) <= '1';
         s_sample_count_en(to_integer(s_track_scan)) <= '1'; -- increment current sample counter
 
+      when st_scan      =>
+        s_track_scan_en <= '1';
+
       when st_wait_data =>
-        s_track_scan_en   <= '0';
-        s_load_data_add <= (MEMORY_TR_SIZE * (to_integer(s_track_scan)) + s_sample_count(to_integer(s_track_scan)));
+        o_mem_load        <= '1';
+        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_load_data =>
-        s_track_scan_en   <= '0';
         s_load_data_en(to_integer(s_track_scan)) <= '1';
+        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_wait_ts   =>
-        s_track_scan_en   <= '0';
-        s_load_data_add <= (MEMORY_TR_SIZE * (to_integer(s_track_scan)) + s_sample_count(to_integer(s_track_scan)) + 4);
+        o_mem_load        <= '1';
+        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
 
       when st_load_ts   =>
-        s_track_scan_en   <= '0';
         s_load_ts_en(to_integer(s_track_scan)) <= '1';
+        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
 
       when others       =>
         o_mem_load        <= '0';  -- load request
@@ -296,13 +299,14 @@ begin
           s_load_data_en(i)    <= '0';
           s_load_ts_en(i)      <= '0';
 
-          s_sample_count_rs(i) <= '1';
+          s_sample_count_rs(i) <= '0';
           s_sample_count_en(i) <= '0';
         end loop;
 
         s_init_ready_rst  <= '1';
         s_init_ready_set  <= '0';
     end case;
+
   end process;
 
   p_evt_data: process(s_evt_data_r)
