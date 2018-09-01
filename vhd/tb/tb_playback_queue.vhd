@@ -24,7 +24,8 @@ architecture TEST of TB_PB_QUEUE is
     o_mem_load      : out std_logic;
     o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
-    o_pb_ready      : out t_midi_ready;
+    o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
     o_pb_data       : out t_midi_data;
     o_init_ready    : out std_logic;
     o_mem_error     : out std_logic
@@ -45,7 +46,6 @@ port (
   -- timestamp output
   o_ts_fraction : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
   o_ts_seconds  : out std_logic_vector(ST_TSS_SIZE-1 downto 0)
-
   );
 end component;
 
@@ -84,7 +84,8 @@ end component;
 
   signal s_mem_load       : std_logic;
   signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
-  signal s_pb_ready       : t_midi_ready;
+  signal s_pb_ready       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_pb_end         : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_pb_data        : t_midi_data;
   signal s_init_ready     : std_logic;
   signal s_mem_error      : std_logic;
@@ -110,6 +111,7 @@ begin
 
     o_pb_ready      => s_pb_ready,
     o_pb_data       => s_pb_data,
+    o_pb_end        => s_pb_end,
     o_init_ready    => s_init_ready,
     o_mem_error     => s_mem_error
   );

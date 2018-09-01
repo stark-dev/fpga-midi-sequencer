@@ -2,6 +2,7 @@ source scripts/vcom_basics.scr
 source scripts/vcom_uart.scr
 source scripts/vcom_midi.scr
 source scripts/vcom_display.scr
+source scripts/vcom_memory.scr
 vcom vhd/src/core/sl_button.vhd
 vcom vhd/src/core/timestamp_gen.vhd
 vcom vhd/src/core/track_status.vhd

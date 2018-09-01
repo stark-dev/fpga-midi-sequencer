@@ -19,11 +19,12 @@ port (
   o_mem_load      : out std_logic;
   o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
-  o_pb_ready      : out t_midi_ready;
+  o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
   o_pb_data       : out t_midi_data;
   o_init_ready    : out std_logic;
   o_mem_error     : out std_logic
-);  -- TODO add playback end as vector for all tracks (define end sample)
+);
 end entity;
 
 architecture BHV of PLAYBACK_QUEUE is
@@ -54,7 +55,7 @@ architecture BHV of PLAYBACK_QUEUE is
   end component;
 
   -- constant c_mem_track_size : integer := MEMORY_TR_SIZE;
-  constant c_mem_track_size : integer := 512;
+  constant c_mem_track_size : integer := 512; -- remove, just for test
 
   constant c_memory_tr_cnt  : integer := up_int_log2(c_mem_track_size / 8); -- each sample is 4 bytes (data) + 4 bytes (ts)
 
@@ -63,6 +64,8 @@ architecture BHV of PLAYBACK_QUEUE is
 
   signal s_evt_data_r       : t_midi_data;
   signal s_evt_ts_r         : t_midi_ts;
+
+  signal s_evt_end          : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
   signal s_ts_match         : std_logic;
 
@@ -144,6 +147,8 @@ begin
   s_track_scan_end  <= to_unsigned(SEQ_TRACKS - 1 , ST_TRACK_SIZE);
 
   s_ts_match <= '1' when (s_evt_ts_r(to_integer(s_track_scan))(ST_TSS_RANGE) = i_ts_seconds) and (s_evt_ts_r(to_integer(s_track_scan))(ST_TSF_RANGE) = i_ts_fraction) else '0';
+
+  s_evt_end <= (others => '1');
 
   p_track_scan: process(s_track_scan_rs, i_clk)
   begin
@@ -326,6 +331,21 @@ begin
       elsif s_init_ready_set = '1' then
         s_init_ready <= '1';
       end if;
+    end if;
+  end process;
+
+  p_playback_end: process(i_reset_n, s_init_ready, s_evt_data_r)
+  begin
+    if i_reset_n = '0' then
+      o_pb_end <= (others => '0');
+    else
+      for i in 0 to SEQ_TRACKS - 1 loop
+        if s_init_ready = '1' then
+          if s_evt_data_r(i) = s_evt_end then
+            o_pb_end(i) <= '1';
+          end if;
+        end if;
+      end loop;
     end if;
   end process;
 

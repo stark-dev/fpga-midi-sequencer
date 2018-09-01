@@ -24,8 +24,12 @@ port (
   i_midi_data     : in  std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
 
   -- playback events
-  i_pb_ready      : in  t_midi_ready;
+  i_pb_ready      : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  i_pb_end        : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
   i_pb_data       : in  t_midi_data;
+
+  -- external module ready
+  i_pb_q_ready    : in  std_logic;
 
   -- outputs
   o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
@@ -194,6 +198,8 @@ end component;
 
   signal s_play_end       : std_logic;
 
+  signal s_modules_ready  : std_logic;
+
   -- interface buttons (s -> short, l -> long)
   signal s_btn_l_s        : std_logic;
   signal s_btn_l_l        : std_logic;
@@ -265,7 +271,7 @@ end component;
   signal s_sound_on       : std_logic;
   signal s_sound_rst      : std_logic;
 
-  signal s_evt_ready      : t_midi_ready;
+  signal s_evt_ready      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_evt_data       : t_midi_data;
 
 begin
@@ -285,7 +291,11 @@ begin
   s_ts_frac_end     <= (others => '1'); -- TODO set rec end
   s_ts_secs_end     <= (others => '1');
 
-  s_play_end        <= '1' when (s_ts_frac = s_ts_frac_end) and (s_ts_secs = s_ts_secs_end) else '0';
+  s_play_end        <= '1' when (s_ts_frac = s_ts_frac_end) and (s_ts_secs = s_ts_secs_end) else
+                       '1' when and_reduce(i_pb_end) = '1' else
+                       '0';
+
+  s_modules_ready   <= i_pb_q_ready; -- TODO add other module ready signals in AND
 
   -- buttons
   s_tr_toggle_rec   <= '0'; -- TODO add button
@@ -489,10 +499,14 @@ begin
     elsif i_clk'event and i_clk = '1' then
       case s_fsm_status is
         when st_reset   =>
-          s_fsm_status  <= st_idle; -- TODO: add init state
+          s_fsm_status  <= st_init;
 
         when st_init    =>
-          s_fsm_status  <= st_idle;
+          if s_modules_ready = '1' then
+            s_fsm_status  <= st_idle;
+          else
+            s_fsm_status  <= st_init;
+          end if;
 
         when st_idle    =>
           if s_btn_l_s = '1' then
@@ -703,5 +717,13 @@ begin
       end if;
     end if;
   end process;
+
+  -- p_playback_end: process(s_ts_frac, s_ts_secs, s_ts_frac_end, s_ts_secs_end, i_pb_end)
+  -- begin
+  --   if (s_ts_frac = s_ts_frac_end) and (s_ts_secs = s_ts_secs_end) then
+  --     s_play_end <= '1';
+  --   elsif
+  --   end if;
+  -- end process;
 
 end architecture;

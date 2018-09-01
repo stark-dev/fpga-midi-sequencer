@@ -29,8 +29,12 @@ architecture TEST of TB_CORE is
     i_midi_data     : in  std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
 
     -- playback events
-    i_pb_ready      : in  t_midi_ready;
+    i_pb_ready      : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    i_pb_end        : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
     i_pb_data       : in  t_midi_data;
+
+    -- external module ready
+    i_pb_q_ready    : in  std_logic;
 
     -- outputs
     o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
@@ -148,7 +152,8 @@ architecture TEST of TB_CORE is
   -- sound gen
   signal s_midi_ready   : std_logic;
   signal s_midi_data    : std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
-  signal s_pb_ready     : t_midi_ready;
+  signal s_pb_ready     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_pb_end       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_pb_data      : t_midi_data;
   signal s_sg_note      : t_sg_note;
   signal s_sg_vel       : t_sg_vel;
@@ -156,6 +161,9 @@ architecture TEST of TB_CORE is
   signal s_sg_stop      : t_sg_stop;
 
   signal s_sound_on     : std_logic;
+
+  -- ext module ready
+  signal s_pb_q_ready   : std_logic;
 
 begin
   s_midi_ready    <= s_evt_ready;
@@ -175,7 +183,9 @@ begin
     i_midi_ready  => s_midi_ready,
     i_midi_data   => s_midi_data,
     i_pb_ready    => s_pb_ready,
+    i_pb_end      => s_pb_end,
     i_pb_data     => s_pb_data,
+    i_pb_q_ready  => s_pb_q_ready,
     o_ts_seconds  => s_ts_seconds,
     o_ts_fraction => s_ts_fraction,
     o_sound_on    => s_sound_on,
