@@ -298,7 +298,7 @@ begin
     end case;
   end process;
 
-  p_display_0_control: process(i_state, s_disp_0_4, s_disp_0_3, i_track_omni, i_track_poly)
+  p_display_0_control: process(i_state, i_menu, s_disp_0_4, s_disp_0_3, i_track_omni, i_track_poly)
   begin
     case i_state is
       when st_idle    =>
