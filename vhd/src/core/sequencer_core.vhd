@@ -300,7 +300,7 @@ begin
   s_modules_ready   <= i_pb_q_ready; -- TODO add other module ready signals in AND
 
   -- buttons
-  s_tr_toggle_rec   <= '0'; -- TODO add button
+  s_tr_toggle_rec   <= s_btn_r_s when (s_fsm_status = st_idle) else '0';
 
   s_vol_up          <= s_btn_u_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
   s_vol_down        <= s_btn_d_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
@@ -512,7 +512,11 @@ begin
 
         when st_idle    =>
           if s_btn_l_s = '1' then
-            s_fsm_status  <= st_play;
+            if s_track_rec = '1' then
+              s_fsm_status  <= st_rec;
+            else
+              s_fsm_status  <= st_play;
+            end if;
           elsif s_btn_l_l = '1' then
             s_fsm_status  <= st_stop;
           elsif s_btn_r_l = '1' then
@@ -529,6 +533,16 @@ begin
           else
             s_fsm_status  <= st_play;
           end if;
+
+        when st_rec     =>
+          if s_btn_l_s = '1' then
+            s_fsm_status  <= st_end;
+          else
+            s_fsm_status  <= st_rec;
+          end if;
+
+        when st_end     =>
+          s_fsm_status  <= st_init;
 
         when st_stop    =>
           s_fsm_status  <= st_init;
@@ -586,7 +600,25 @@ begin
         s_vol_rst         <= '1';
         s_tr_reset        <= (others => '1');
 
+      when st_rec     =>
+        s_play_pause_n    <= '1';
+        s_restart         <= '0';
+        s_sound_on        <= '1';
+        s_active_tr_rst   <= '1';
+        s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
+        s_tr_reset        <= (others => '1');
+
       when st_stop    =>
+        s_play_pause_n    <= '0';
+        s_restart         <= '1';
+        s_sound_on        <= '0';
+        s_active_tr_rst   <= '1';
+        s_menu_reset      <= '0';
+        s_vol_rst         <= '1';
+        s_tr_reset        <= (others => '1');
+
+      when st_end     =>
         s_play_pause_n    <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
@@ -719,13 +751,5 @@ begin
       end if;
     end if;
   end process;
-
-  -- p_playback_end: process(s_ts_frac, s_ts_secs, s_ts_frac_end, s_ts_secs_end, i_pb_end)
-  -- begin
-  --   if (s_ts_frac = s_ts_frac_end) and (s_ts_secs = s_ts_secs_end) then
-  --     s_play_end <= '1';
-  --   elsif
-  --   end if;
-  -- end process;
 
 end architecture;

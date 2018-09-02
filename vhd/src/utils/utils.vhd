@@ -48,7 +48,7 @@ package UTILS_PKG is
   -- custom types
 
   -- core fsm
-  type t_core_fsm     is (st_reset, st_init, st_idle, st_play, st_stop, st_menu);
+  type t_core_fsm     is (st_reset, st_init, st_idle, st_play, st_rec, st_end, st_stop, st_menu);
 
   -- menu option
   type t_menu_option  is (op_track, op_patch, op_track_vol, op_pan, op_poly, op_omni);

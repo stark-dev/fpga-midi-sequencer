@@ -112,6 +112,8 @@ begin
     case i_state is
       when st_play    =>
         s_disp_1_4_in <= s_ts_frac_2;
+      when st_rec     =>
+        s_disp_1_4_in <= s_ts_frac_2;
       when st_menu    =>
         case i_menu is
           when op_patch     =>
@@ -132,6 +134,8 @@ begin
   begin
     case i_state is
       when st_play    =>
+        s_disp_0_4_in <= s_ts_frac_1;
+      when st_rec     =>
         s_disp_0_4_in <= s_ts_frac_1;
       when st_menu    =>
         case i_menu is
@@ -159,6 +163,8 @@ begin
           s_display_array(5)  <= ds_R;
         end if;
       when st_play    =>
+        s_display_array(5)  <= ds_S;
+      when st_rec     =>
         s_display_array(5)  <= ds_S;
       when st_menu    =>
         case i_menu is
@@ -189,6 +195,8 @@ begin
         s_display_array(4)  <= ds_V;
       when st_play    =>
         s_display_array(4)  <= s_disp_4_4;
+      when st_rec     =>
+        s_display_array(4)  <= s_disp_4_4;
       when st_menu    =>
         case i_menu is
           when op_track     =>
@@ -217,6 +225,8 @@ begin
       when st_idle    =>
         s_display_array(3)  <= s_disp_3_3;
       when st_play    =>
+        s_display_array(3)  <= s_disp_3_4;
+      when st_rec     =>
         s_display_array(3)  <= s_disp_3_4;
       when st_menu    =>
         case i_menu is
@@ -247,6 +257,8 @@ begin
         s_display_array(2)  <= s_disp_2_4;
       when st_play    =>
         s_display_array(2)  <= ds_F;
+      when st_rec     =>
+        s_display_array(2)  <= ds_F;
       when st_menu    =>
         case i_menu is
           when op_track     =>
@@ -276,6 +288,8 @@ begin
         s_display_array(1)  <= ds_T;
       when st_play    =>
         s_display_array(1)  <= s_disp_1_4;
+      when st_rec     =>
+        s_display_array(1)  <= s_disp_1_4;
       when st_menu    =>
         case i_menu is
           when op_track     =>
@@ -304,6 +318,8 @@ begin
       when st_idle    =>
         s_display_array(0)  <= s_disp_0_3;
       when st_play    =>
+        s_display_array(0)  <= s_disp_0_4;
+      when st_rec     =>
         s_display_array(0)  <= s_disp_0_4;
       when st_menu    =>
         case i_menu is
