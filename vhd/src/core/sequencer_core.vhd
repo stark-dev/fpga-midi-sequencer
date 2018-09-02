@@ -34,6 +34,7 @@ port (
   -- outputs
   o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
   o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+  o_restart       : out std_logic;
 
   o_sound_on      : out std_logic;
   o_sg_note       : out t_sg_note;
@@ -282,6 +283,7 @@ begin
 
   o_ts_seconds      <= s_ts_secs;
   o_ts_fraction     <= s_ts_frac;
+  o_restart         <= s_restart;
 
   -- internal signal assignment
   s_active_tr_tc_v  <= to_unsigned(SEQ_TRACKS - 1, ST_TRACK_SIZE);
@@ -529,7 +531,7 @@ begin
           end if;
 
         when st_stop    =>
-          s_fsm_status  <= st_idle;
+          s_fsm_status  <= st_init;
 
         when st_menu    =>
           if s_btn_l_s = '1' then
