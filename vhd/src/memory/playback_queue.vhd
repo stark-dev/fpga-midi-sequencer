@@ -10,20 +10,28 @@ port (
   i_clk           : in  std_logic;
   i_reset_n       : in  std_logic;
 
+  i_rec_mode      : in  std_logic;
   i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
   i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
-  i_data_ready    : in  std_logic;
-  i_load_data     : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  i_active_track  : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
 
-  o_mem_load      : out std_logic;
+  i_midi_ready    : in  std_logic;
+
+  i_data_ready    : in  std_logic;
+  i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+
+  o_mem_read      : out std_logic;
+  o_mem_write     : out std_logic;
   o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  o_mem_wr_mux    : out t_mem_wr_mux;
+  o_mem_error     : out std_logic;
 
   o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
   o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
   o_pb_data       : out t_midi_data;
-  o_init_ready    : out std_logic;
-  o_mem_error     : out std_logic
+
+  o_init_ready    : out std_logic
 );
 end entity;
 
@@ -59,7 +67,11 @@ architecture BHV of PLAYBACK_QUEUE is
 
   constant c_memory_tr_cnt  : integer := up_int_log2(c_mem_track_size / 8); -- each sample is 4 bytes (data) + 4 bytes (ts)
 
-  type t_queue_fsm is (st_reset, st_init, st_ready, st_idle, st_scan, st_event, st_load_data, st_wait_data, st_load_ts, st_wait_ts, st_error);
+  type t_queue_fsm is (st_reset, st_init, st_ready, st_idle, st_scan, st_event,
+                       st_load_data, st_wait_data, st_load_ts, st_wait_ts,
+                       st_write_data, st_wait_write_data, st_write_ts, st_wait_write_ts, st_update,
+                       st_error);
+
   type t_sample_cnt is array (SEQ_TRACKS - 1 downto 0) of unsigned(c_memory_tr_cnt - 1 downto 0);
 
   signal s_evt_data_r       : t_midi_data;
@@ -69,12 +81,14 @@ architecture BHV of PLAYBACK_QUEUE is
 
   signal s_ts_match         : std_logic;
 
-  signal s_load_data_add    : unsigned(MEMORY_SIZE - 1 downto 0);
+  signal s_mem_address      : unsigned(MEMORY_SIZE - 1 downto 0);
 
   signal s_load_data_en     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_load_ts_en       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   signal s_q_state          : t_queue_fsm;
+
+  signal s_active_track     : unsigned(ST_TRACK_SIZE - 1 downto 0);
 
   signal s_track_scan       : unsigned(ST_TRACK_SIZE - 1 downto 0);
   signal s_track_scan_en    : std_logic;
@@ -92,6 +106,9 @@ architecture BHV of PLAYBACK_QUEUE is
   signal s_init_ready_rst   : std_logic;
   signal s_init_ready_set   : std_logic;
 
+  signal s_rec_request      : std_logic;
+  signal s_rec_request_set  : std_logic;
+  signal s_rec_request_rst  : std_logic;
   signal s_mem_error        : std_logic;
 
 begin
@@ -104,7 +121,7 @@ begin
       i_clk         => i_clk,
       i_reset_n     => i_reset_n,
       i_load_en     => s_load_data_en(i),
-      i_par_in      => i_load_data,
+      i_par_in      => i_mem_data,
       o_par_out     => s_evt_data_r(i)
     );
   end generate;
@@ -117,7 +134,7 @@ begin
       i_clk         => i_clk,
       i_reset_n     => i_reset_n,
       i_load_en     => s_load_ts_en(i),
-      i_par_in      => i_load_data,
+      i_par_in      => i_mem_data,
       o_par_out     => s_evt_ts_r(i)
     );
   end generate;
@@ -136,9 +153,11 @@ begin
     );
   end generate;
 
-  o_mem_address <= std_logic_vector(s_load_data_add);
+  o_mem_address <= std_logic_vector(s_mem_address);
   o_mem_error   <= s_mem_error;
   o_init_ready  <= s_init_ready;
+
+  s_active_track <= unsigned(i_active_track);
 
   s_mem_error   <= or_reduce(s_sample_count_tc);
 
@@ -180,7 +199,9 @@ begin
         when st_ready     =>
           s_q_state <= st_idle;
         when st_idle      =>
-          if s_ts_match = '1' then
+          if s_rec_request = '1' then
+            s_q_state <= st_write_data;
+          elsif s_ts_match = '1' then
             s_q_state <= st_event;
           elsif s_mem_error = '1' then
             s_q_state <= st_error;
@@ -213,6 +234,24 @@ begin
           end if;
         when st_load_ts   =>
           s_q_state <= st_scan;
+        when st_write_data =>
+          s_q_state <= st_wait_write_data;
+        when st_wait_write_data =>
+          if i_data_ready = '1' then
+            s_q_state <= st_write_ts;
+          else
+            s_q_state <= st_wait_write_data;
+          end if;
+        when st_write_ts =>
+          s_q_state <= st_wait_write_ts;
+        when st_wait_write_ts =>
+          if i_data_ready = '1' then
+            s_q_state <= st_update;
+          else
+            s_q_state <= st_wait_write_ts;
+          end if;
+        when st_update =>
+          s_q_state <= st_idle;
         when st_error =>
           s_q_state <= st_error;
         when others       =>
@@ -223,8 +262,10 @@ begin
 
   p_fsm_ctrl: process(s_q_state, s_track_scan, s_sample_count)
   begin
-    o_mem_load        <= '0';  -- load request
-    s_load_data_add   <= (others => '0');
+    o_mem_read        <= '0';  -- read request
+    o_mem_write       <= '0';  -- write request
+    o_mem_wr_mux      <= mux_off;
+    s_mem_address     <= (others => '0');
 
     s_track_scan_rs   <= '1';
     s_track_scan_en   <= '0';
@@ -243,8 +284,10 @@ begin
 
     case s_q_state is
       when st_reset     =>
-        o_mem_load        <= '0';  -- load request
-        s_load_data_add   <= (others => '0');
+        o_mem_read        <= '0';
+        o_mem_write       <= '0';
+        o_mem_wr_mux      <= mux_off;
+        s_mem_address   <= (others => '0');
 
         s_track_scan_rs   <= '0';
         s_track_scan_en   <= '0';
@@ -270,31 +313,56 @@ begin
       when st_idle      =>
 
       when st_event     =>
-        o_pb_ready(to_integer(s_track_scan)) <= '1';
-        s_sample_count_en(to_integer(s_track_scan)) <= '1'; -- increment current sample counter
+        if (s_track_scan /= s_active_track) then
+          o_pb_ready(to_integer(s_track_scan)) <= '1';
+          s_sample_count_en(to_integer(s_track_scan)) <= '1'; -- increment current sample counter
+        end if;
 
       when st_scan      =>
         s_track_scan_en <= '1';
 
       when st_wait_data =>
-        o_mem_load        <= '1';
-        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
+        o_mem_read        <= '1';
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_load_data =>
         s_load_data_en(to_integer(s_track_scan)) <= '1';
-        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_wait_ts   =>
-        o_mem_load        <= '1';
-        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
+        o_mem_read        <= '1';
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
 
       when st_load_ts   =>
         s_load_ts_en(to_integer(s_track_scan)) <= '1';
-        s_load_data_add <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
+
+      when st_write_data =>
+        o_mem_write     <= '1';
+        o_mem_wr_mux    <= mux_midi;
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_active_track))) + to_integer(8 * s_sample_count(to_integer(s_active_track))), MEMORY_SIZE);
+
+      when st_wait_write_data =>
+        o_mem_wr_mux    <= mux_midi;
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_active_track))) + to_integer(8 * s_sample_count(to_integer(s_active_track))), MEMORY_SIZE);
+
+      when st_write_ts  =>
+        o_mem_write     <= '1';
+        o_mem_wr_mux    <= mux_ts;
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_active_track))) + to_integer(8 * s_sample_count(to_integer(s_active_track))) + 4, MEMORY_SIZE);
+
+      when st_wait_write_ts  =>
+        o_mem_wr_mux    <= mux_ts;
+        s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_active_track))) + to_integer(8 * s_sample_count(to_integer(s_active_track))) + 4, MEMORY_SIZE);
+
+      when st_update         =>
+        s_sample_count_en(to_integer(s_active_track)) <= '1'; -- increment active track sample counter
 
       when others       =>
-        o_mem_load        <= '0';  -- load request
-        s_load_data_add   <= (others => '0');
+        o_mem_read        <= '0';  -- load request
+        o_mem_write       <= '0';
+        o_mem_wr_mux      <= mux_off;
+        s_mem_address   <= (others => '0');
 
         s_track_scan_rs   <= '0';
         s_track_scan_en   <= '0';
@@ -334,7 +402,7 @@ begin
     end if;
   end process;
 
-  p_playback_end: process(i_reset_n, s_init_ready, s_evt_data_r)
+  p_playback_end: process(i_reset_n, s_init_ready, s_evt_data_r, s_active_track)
   begin
     if i_reset_n = '0' then
       o_pb_end <= (others => '0');
@@ -343,9 +411,33 @@ begin
         if s_init_ready = '1' then
           if s_evt_data_r(i) = s_evt_end then
             o_pb_end(i) <= '1';
+          elsif i = to_integer(s_active_track) then
+            o_pb_end(i) <= '1';
           end if;
         end if;
       end loop;
+    end if;
+  end process;
+
+  p_rec_request: process(s_rec_request_set, s_rec_request_rst)
+  begin
+    if s_rec_request_rst = '1' then
+      s_rec_request <= '0';
+    elsif s_rec_request_set = '1' then
+      s_rec_request <= '1';
+    end if;
+  end process;
+
+  p_rec_request_ctrl: process(i_reset_n, i_clk)
+  begin
+    if i_reset_n = '0' then
+      s_rec_request_rst <= '1';
+    elsif i_clk'event and i_clk = '1' then
+      if i_rec_mode = '1' and i_midi_ready = '1' then
+        s_rec_request_set <= '1';
+      elsif s_q_state = st_write_data then
+        s_rec_request_rst <= '1';
+      end if;
     end if;
   end process;
 

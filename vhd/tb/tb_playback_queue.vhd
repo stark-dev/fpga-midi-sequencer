@@ -15,20 +15,28 @@ architecture TEST of TB_PB_QUEUE is
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
 
+    i_rec_mode      : in  std_logic;
     i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
     i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
-    i_data_ready    : in  std_logic;
-    i_load_data     : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+    i_active_track  : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
 
-    o_mem_load      : out std_logic;
+    i_midi_ready    : in  std_logic;
+
+    i_data_ready    : in  std_logic;
+    i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+
+    o_mem_read      : out std_logic;
+    o_mem_write     : out std_logic;
     o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+    o_mem_wr_mux    : out t_mem_wr_mux;
+    o_mem_error     : out std_logic;
 
     o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
     o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
     o_pb_data       : out t_midi_data;
-    o_init_ready    : out std_logic;
-    o_mem_error     : out std_logic
+
+    o_init_ready    : out std_logic
   );
 end component;
 
@@ -75,14 +83,20 @@ end component;
   signal s_rst            : std_logic;
 
   signal s_play_pause_n   : std_logic;
+  signal s_rec_mode       : std_logic;
   signal s_restart        : std_logic;
   signal s_ts_frac        : std_logic_vector(ST_TSF_SIZE - 1 downto 0);
   signal s_ts_secs        : std_logic_vector(ST_TSS_SIZE - 1 downto 0);
 
+  signal s_active_track   : std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+
+  signal s_midi_ready     : std_logic;
+
   signal s_data_ready     : std_logic;
   signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
 
-  signal s_mem_load       : std_logic;
+  signal s_mem_read       : std_logic;
+  signal s_mem_write      : std_logic;
   signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
   signal s_pb_ready       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_pb_end         : std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -91,7 +105,7 @@ end component;
   signal s_mem_error      : std_logic;
 
   signal s_mem_enable     : std_logic;
-  signal s_mem_write      : std_logic;
+  signal s_mem_wr_mux     : t_mem_wr_mux;
 
 begin
 
@@ -100,14 +114,20 @@ begin
     i_clk           => s_clk,
     i_reset_n       => s_rst,
 
+    i_rec_mode      => s_rec_mode,
     i_ts_seconds    => s_ts_secs,
     i_ts_fraction   => s_ts_frac,
 
-    i_data_ready    => s_data_ready,
-    i_load_data     => s_mem_data,
+    i_active_track  => s_active_track,
+    i_midi_ready    => s_midi_ready,
 
-    o_mem_load      => s_mem_load,
+    i_data_ready    => s_data_ready,
+    i_mem_data      => s_mem_data,
+
+    o_mem_read      => s_mem_read,
+    o_mem_write     => s_mem_write,
     o_mem_address   => s_mem_address,
+    o_mem_wr_mux    => s_mem_wr_mux,
 
     o_pb_ready      => s_pb_ready,
     o_pb_data       => s_pb_data,
@@ -133,7 +153,7 @@ begin
     i_clk           => s_clk,
     i_reset_n       => s_rst,
     i_enable        => s_mem_enable,
-    i_read_en       => s_mem_load,
+    i_read_en       => s_mem_read,
     i_write_en      => s_mem_write,
     i_address       => s_mem_address(11 downto 2), -- 4 byte align
     i_load_data     => s_pb_data(0),
@@ -154,7 +174,10 @@ begin
   begin
     s_rst           <= '1';
     s_mem_enable    <= '0';
+    s_rec_mode      <= '0';
+    s_midi_ready    <= '0';
     s_play_pause_n  <= '1';
+    s_active_track  <= (others => '0');
     s_restart       <= '0';
     wait for 100 ns;
 

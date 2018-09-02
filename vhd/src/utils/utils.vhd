@@ -63,6 +63,11 @@ package UTILS_PKG is
     ctrl_unknown, ctrl_all_sn_off, ctrl_rst, ctrl_all_nt_off, ctrl_omni_on, ctrl_omni_off, ctrl_mono_on, ctrl_poly_on
   );
 
+  -- memory write mux
+  type t_mem_wr_mux is (
+    mux_off, mux_midi, mux_ts
+  );
+
   -- display values
   type t_display_out is (
     ds_A, ds_B, ds_C, ds_D, ds_E, ds_F, ds_G, ds_H,
@@ -95,6 +100,7 @@ package UTILS_PKG is
   subtype SEQ_DATA2_RANGE is natural range 6 downto 0;
 
   -- sequencer core subtypes (status register)
+  subtype  ST_TS_RESERV   is natural range 31 downto (ST_TSS_SIZE + ST_TSF_SIZE);
   subtype  ST_TSS_RANGE   is natural range (ST_TSS_SIZE + ST_TSF_SIZE - 1) downto ST_TSF_SIZE;
   subtype  ST_TSF_RANGE   is natural range ST_TSF_SIZE  - 1 downto 0;
 
