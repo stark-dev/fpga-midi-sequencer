@@ -39,6 +39,8 @@ architecture TEST of TB_CORE is
     -- outputs
     o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
     o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+    o_active_track  : out std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+    o_rec_mode      : out std_logic;
     o_restart       : out std_logic;
 
     o_sound_on      : out std_logic;
@@ -108,20 +110,28 @@ architecture TEST of TB_CORE is
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
 
+    i_rec_mode      : in  std_logic;
     i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
     i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
-    i_data_ready    : in  std_logic;
-    i_load_data     : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+    i_active_track  : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
 
-    o_mem_load      : out std_logic;
+    i_midi_ready    : in  std_logic;
+
+    i_data_ready    : in  std_logic;
+    i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+
+    o_mem_read      : out std_logic;
+    o_mem_write     : out std_logic;
     o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+    o_mem_wr_mux    : out t_mem_wr_mux;
+    o_mem_error     : out std_logic;
 
     o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
     o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
     o_pb_data       : out t_midi_data;
-    o_init_ready    : out std_logic;
-    o_mem_error     : out std_logic
+
+    o_init_ready    : out std_logic
   );
 end component;
 
@@ -173,6 +183,8 @@ end component;
 
   signal s_ts_seconds   : std_logic_vector(ST_TSS_SIZE-1 downto 0);
   signal s_ts_fraction  : std_logic_vector(ST_TSF_SIZE-1 downto 0);
+  signal s_active_track : std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+  signal s_rec_mode     : std_logic;
   signal s_restart      : std_logic;
 
   -- uart tx
@@ -212,12 +224,15 @@ end component;
   signal s_data_ready     : std_logic;
   signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
 
-  signal s_mem_load       : std_logic;
+  signal s_mem_read       : std_logic;
+  signal s_mem_write      : std_logic;
   signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
   signal s_mem_error      : std_logic;
 
   signal s_mem_enable     : std_logic;
-  signal s_mem_write      : std_logic;
+  signal s_mem_wr_mux     : t_mem_wr_mux;
+
+  signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
 begin
   s_midi_ready    <= s_evt_ready;
@@ -227,29 +242,31 @@ begin
 
   DUT : SEQUENCER_CORE
   port map(
-    i_clk         => s_clk,
-    i_reset_n     => s_rst,
-    i_btn_left    => s_btn1,
-    i_btn_up      => s_btn2,
-    i_btn_down    => s_btn3,
-    i_btn_right   => s_btn4,
-    i_tr_mute     => s_tr_mute,
-    i_tr_solo     => s_tr_solo,
-    i_midi_ready  => s_midi_ready,
-    i_midi_data   => s_midi_data,
-    i_pb_ready    => s_pb_ready,
-    i_pb_end      => s_pb_end,
-    i_pb_data     => s_pb_data,
-    i_pb_q_ready  => s_pb_q_ready,
-    o_ts_seconds  => s_ts_seconds,
-    o_ts_fraction => s_ts_fraction,
-    o_restart     => s_restart,
-    o_sound_on    => s_sound_on,
-    o_sg_note     => s_sg_note,
-    o_sg_vel      => s_sg_vel,
-    o_sg_start    => s_sg_start,
-    o_sg_stop     => s_sg_stop,
-    o_display_a   => s_display
+    i_clk           => s_clk,
+    i_reset_n       => s_rst,
+    i_btn_left      => s_btn1,
+    i_btn_up        => s_btn2,
+    i_btn_down      => s_btn3,
+    i_btn_right     => s_btn4,
+    i_tr_mute       => s_tr_mute,
+    i_tr_solo       => s_tr_solo,
+    i_midi_ready    => s_midi_ready,
+    i_midi_data     => s_midi_data,
+    i_pb_ready      => s_pb_ready,
+    i_pb_end        => s_pb_end,
+    i_pb_data       => s_pb_data,
+    i_pb_q_ready    => s_pb_q_ready,
+    o_ts_seconds    => s_ts_seconds,
+    o_ts_fraction   => s_ts_fraction,
+    o_active_track  => s_active_track,
+    o_rec_mode      => s_rec_mode,
+    o_restart       => s_restart,
+    o_sound_on      => s_sound_on,
+    o_sg_note       => s_sg_note,
+    o_sg_vel        => s_sg_vel,
+    o_sg_start      => s_sg_start,
+    o_sg_stop       => s_sg_stop,
+    o_display_a     => s_display
   );
 
   EVT: MIDI_EVT_FILTER
@@ -305,20 +322,28 @@ begin
     i_clk           => s_clk,
     i_reset_n       => s_data_reload,
 
+    i_rec_mode      => s_rec_mode,
     i_ts_seconds    => s_ts_seconds,
     i_ts_fraction   => s_ts_fraction,
 
-    i_data_ready    => s_data_ready,
-    i_load_data     => s_mem_data,
+    i_active_track  => s_active_track,
 
-    o_mem_load      => s_mem_load,
+    i_midi_ready    => s_midi_ready,
+
+    i_data_ready    => s_data_ready,
+    i_mem_data      => s_mem_data,
+
+    o_mem_read      => s_mem_read,
+    o_mem_write     => s_mem_write,
     o_mem_address   => s_mem_address,
+    o_mem_wr_mux    => s_mem_wr_mux,
+    o_mem_error     => s_mem_error,
 
     o_pb_ready      => s_pb_ready,
     o_pb_end        => s_pb_end,
     o_pb_data       => s_pb_data,
-    o_init_ready    => s_pb_q_ready,
-    o_mem_error     => s_mem_error
+
+    o_init_ready    => s_pb_q_ready
   );
 
   SAMPLE_MEM : SAMPLE_MEMORY
@@ -327,10 +352,10 @@ begin
     i_clk           => s_clk,
     i_reset_n       => s_rst,
     i_enable        => s_mem_enable,
-    i_read_en       => s_mem_load,
+    i_read_en       => s_mem_read,
     i_write_en      => s_mem_write,
     i_address       => s_mem_address(11 downto 2), -- 4 byte align
-    i_load_data     => s_pb_data(0),
+    i_load_data     => s_mem_wr_mux_in,
     o_data          => s_mem_data,
     o_mem_ready     => s_data_ready,
     o_mem_error     => s_mem_error
@@ -342,6 +367,22 @@ begin
     wait for c_clock_half_p;
     s_clk <= '1';
     wait for c_clock_half_p;
+  end process;
+
+  p_mem_wr_mux: process(s_mem_wr_mux, s_midi_data, s_ts_fraction, s_ts_seconds)
+  begin
+    case s_mem_wr_mux is
+      when mux_off  =>
+        s_mem_wr_mux_in <= (others => '0');
+      when mux_midi =>
+        s_mem_wr_mux_in <= (others => '0');
+      when mux_ts   =>
+        s_mem_wr_mux_in(ST_TS_RESERV) <= (others => '0');
+        s_mem_wr_mux_in(ST_TSS_RANGE) <= s_ts_seconds;
+        s_mem_wr_mux_in(ST_TSF_RANGE) <= s_ts_fraction;
+      when others   =>
+        s_mem_wr_mux_in <= (others => '0');
+    end case;
   end process;
 
   input_gen: process

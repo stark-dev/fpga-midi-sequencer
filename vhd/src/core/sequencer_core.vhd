@@ -34,6 +34,8 @@ port (
   -- outputs
   o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
   o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+  o_active_track  : out std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+  o_rec_mode      : out std_logic;
   o_restart       : out std_logic;
 
   o_sound_on      : out std_logic;
@@ -283,6 +285,7 @@ begin
 
   o_ts_seconds      <= s_ts_secs;
   o_ts_fraction     <= s_ts_frac;
+  o_active_track    <= std_logic_vector(s_active_tr);
   o_restart         <= s_restart;
 
   -- internal signal assignment
@@ -344,8 +347,8 @@ begin
 
   -- components
   TS_GEN : TIMESTAMP_GEN
-  -- generic map (100) -- TODO remove comment (just for test purposes)
-  generic map (c_ts_clock_div)
+  generic map (100) -- TODO remove comment (just for test purposes)
+  -- generic map (c_ts_clock_div)
   port map (
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
@@ -566,6 +569,7 @@ begin
     case s_fsm_status is
       when st_reset   =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '0';
@@ -575,6 +579,7 @@ begin
 
       when st_init    =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -584,6 +589,7 @@ begin
 
       when st_idle    =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -593,6 +599,7 @@ begin
 
       when st_play    =>
         s_play_pause_n    <= '1';
+        o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -602,6 +609,7 @@ begin
 
       when st_rec     =>
         s_play_pause_n    <= '1';
+        o_rec_mode        <= '1';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -611,6 +619,7 @@ begin
 
       when st_stop    =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -620,6 +629,7 @@ begin
 
       when st_end     =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -629,6 +639,7 @@ begin
 
       when st_menu    =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -638,6 +649,7 @@ begin
 
       when others     =>
         s_play_pause_n    <= '0';
+        o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '0';
