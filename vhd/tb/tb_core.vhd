@@ -39,6 +39,7 @@ architecture TEST of TB_CORE is
     -- outputs
     o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
     o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+    o_restart       : out std_logic;
 
     o_sound_on      : out std_logic;
     o_sg_note       : out t_sg_note;
@@ -172,6 +173,7 @@ end component;
 
   signal s_ts_seconds   : std_logic_vector(ST_TSS_SIZE-1 downto 0);
   signal s_ts_fraction  : std_logic_vector(ST_TSF_SIZE-1 downto 0);
+  signal s_restart      : std_logic;
 
   -- uart tx
   signal s_uart_en      : std_logic;
@@ -206,6 +208,7 @@ end component;
   signal s_pb_q_ready   : std_logic;
 
   -- playback queue and memory
+  signal s_data_reload    : std_logic;
   signal s_data_ready     : std_logic;
   signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
 
@@ -220,6 +223,7 @@ begin
   s_midi_ready    <= s_evt_ready;
   s_midi_data     <= s_evt_out;
 
+  s_data_reload   <= s_rst and not(s_restart);
 
   DUT : SEQUENCER_CORE
   port map(
@@ -239,6 +243,7 @@ begin
     i_pb_q_ready  => s_pb_q_ready,
     o_ts_seconds  => s_ts_seconds,
     o_ts_fraction => s_ts_fraction,
+    o_restart     => s_restart,
     o_sound_on    => s_sound_on,
     o_sg_note     => s_sg_note,
     o_sg_vel      => s_sg_vel,
@@ -298,7 +303,7 @@ begin
   PB_Q : PLAYBACK_QUEUE
   port map (
     i_clk           => s_clk,
-    i_reset_n       => s_rst,
+    i_reset_n       => s_data_reload,
 
     i_ts_seconds    => s_ts_seconds,
     i_ts_fraction   => s_ts_fraction,
@@ -826,25 +831,6 @@ begin
     s_tx_load_en    <= '0';
     s_tx_data       <= "01111111";
     wait for 12*c_uart_period;
-
-    -- pause
-    s_rst     <= '1';
-    s_btn1    <= '0';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
-
-    s_rst     <= '1';
-    s_btn1    <= '1';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 1000 ns;
 
     -- menu
     s_rst     <= '1';
