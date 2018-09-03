@@ -39,6 +39,7 @@ port (
   o_restart       : out std_logic;
 
   o_sound_on      : out std_logic;
+  o_sg_patch      : out t_sg_patch;
   o_sg_note       : out t_sg_note;
   o_sg_vel        : out t_sg_vel;
   o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -290,6 +291,14 @@ begin
   o_ts_fraction     <= s_ts_frac;
   o_active_track    <= std_logic_vector(s_active_tr);
   o_restart         <= s_restart;
+
+  p_poly_patch_assign: process(s_tr_status)
+  begin
+    for i in 0 to SEQ_TRACKS - 1 loop
+      o_sg_poly(i)  <= s_tr_status(i)(TR_POLY_BIT);
+      o_sg_patch(i) <= s_tr_status(i)(TR_PATCH_RANGE);
+    end loop;
+  end process;
 
   -- internal signal assignment
   s_active_tr_tc_v  <= to_unsigned(SEQ_TRACKS - 1, ST_TRACK_SIZE);
@@ -790,13 +799,6 @@ begin
         end if;
       end if;
     end if;
-  end process;
-
-  p_poly_control: process(s_tr_status)
-  begin
-    for i in 0 to SEQ_TRACKS - 1 loop
-      o_sg_poly(i) <= s_tr_status(i)(TR_POLY_BIT);
-    end loop;
   end process;
 
 end architecture;

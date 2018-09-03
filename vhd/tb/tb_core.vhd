@@ -44,6 +44,7 @@ architecture TEST of TB_CORE is
     o_restart       : out std_logic;
 
     o_sound_on      : out std_logic;
+    o_sg_patch      : out t_sg_patch;
     o_sg_note       : out t_sg_note;
     o_sg_vel        : out t_sg_vel;
     o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -213,6 +214,7 @@ end component;
   signal s_sg_poly      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   signal s_sound_on     : std_logic;
+  signal s_sg_patch     : t_sg_patch;
 
   -- ext module ready
   signal s_pb_q_ready   : std_logic;
@@ -257,6 +259,7 @@ begin
     o_rec_mode      => s_rec_mode,
     o_restart       => s_restart,
     o_sound_on      => s_sound_on,
+    o_sg_patch      => s_sg_patch,
     o_sg_note       => s_sg_note,
     o_sg_vel        => s_sg_vel,
     o_sg_start      => s_sg_start,
