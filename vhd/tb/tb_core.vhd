@@ -105,7 +105,7 @@ architecture TEST of TB_CORE is
     );
   end component;
 
-  component PLAYBACK_QUEUE is
+  component SAMPLE_MANAGER is
   port (
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
@@ -310,7 +310,7 @@ begin
     o_uart_err    => s_uart_rx_err
   );
 
-  PB_Q : PLAYBACK_QUEUE
+  SAMPLE_MNG : SAMPLE_MANAGER
   port map (
     i_clk           => s_clk,
     i_reset_n       => s_data_reload,

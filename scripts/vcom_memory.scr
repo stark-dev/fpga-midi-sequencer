@@ -1,3 +1,3 @@
-vcom vhd/src/memory/playback_queue.vhd
+vcom vhd/src/memory/sample_manager.vhd
 vcom vhd/src/memory/sample_memory.vhd
 vcom vhd/tb/tb_playback_queue.vhd

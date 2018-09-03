@@ -10,7 +10,7 @@ end TB_PB_QUEUE;
 
 architecture TEST of TB_PB_QUEUE is
 
-  component PLAYBACK_QUEUE is
+  component SAMPLE_MANAGER is
   port (
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
@@ -109,7 +109,7 @@ end component;
 
 begin
 
-  DUT : PLAYBACK_QUEUE
+  DUT : SAMPLE_MANAGER
   port map(
     i_clk           => s_clk,
     i_reset_n       => s_rst,

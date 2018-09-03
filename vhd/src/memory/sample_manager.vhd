@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 use work.UTILS_PKG.all;
 
-entity PLAYBACK_QUEUE is
+entity SAMPLE_MANAGER is
 port (
   i_clk           : in  std_logic;
   i_reset_n       : in  std_logic;
@@ -35,7 +35,7 @@ port (
 );
 end entity;
 
-architecture BHV of PLAYBACK_QUEUE is
+architecture BHV of SAMPLE_MANAGER is
 
   component REGISTER_N is
   generic (
