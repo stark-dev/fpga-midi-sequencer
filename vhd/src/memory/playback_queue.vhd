@@ -413,6 +413,8 @@ begin
             o_pb_end(i) <= '1';
           elsif i = to_integer(s_active_track) then
             o_pb_end(i) <= '1';
+          else
+            o_pb_end(i) <= '0';
           end if;
         end if;
       end loop;
@@ -432,10 +434,13 @@ begin
   begin
     if i_reset_n = '0' then
       s_rec_request_rst <= '1';
+      s_rec_request_set <= '0';
     elsif i_clk'event and i_clk = '1' then
       if i_rec_mode = '1' and i_midi_ready = '1' then
         s_rec_request_set <= '1';
+        s_rec_request_rst <= '0';
       elsif s_q_state = st_write_data then
+        s_rec_request_set <= '0';
         s_rec_request_rst <= '1';
       end if;
     end if;
