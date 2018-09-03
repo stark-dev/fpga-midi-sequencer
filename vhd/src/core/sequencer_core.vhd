@@ -41,8 +41,9 @@ port (
   o_sound_on      : out std_logic;
   o_sg_note       : out t_sg_note;
   o_sg_vel        : out t_sg_vel;
-  o_sg_start      : out t_sg_start;
-  o_sg_stop       : out t_sg_stop;
+  o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  o_sg_stop       : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  o_sg_poly       : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   o_display_a     : out t_display_array
 );
@@ -789,6 +790,13 @@ begin
         end if;
       end if;
     end if;
+  end process;
+
+  p_poly_control: process(s_tr_status)
+  begin
+    for i in 0 to SEQ_TRACKS - 1 loop
+      o_sg_poly(i) <= s_tr_status(i)(TR_POLY_BIT);
+    end loop;
   end process;
 
 end architecture;

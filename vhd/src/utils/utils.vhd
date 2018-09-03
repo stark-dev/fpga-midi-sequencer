@@ -84,8 +84,6 @@ package UTILS_PKG is
 
   type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
   type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
-  type t_sg_start       is array (SEQ_TRACKS - 1 downto 0) of std_logic;
-  type t_sg_stop        is array (SEQ_TRACKS - 1 downto 0) of std_logic;
 
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;

@@ -46,8 +46,9 @@ architecture TEST of TB_CORE is
     o_sound_on      : out std_logic;
     o_sg_note       : out t_sg_note;
     o_sg_vel        : out t_sg_vel;
-    o_sg_start      : out t_sg_start;
-    o_sg_stop       : out t_sg_stop;
+    o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    o_sg_stop       : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+    o_sg_poly       : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
     o_display_a     : out t_display_array
   );
@@ -207,8 +208,9 @@ end component;
   signal s_pb_data      : t_midi_data;
   signal s_sg_note      : t_sg_note;
   signal s_sg_vel       : t_sg_vel;
-  signal s_sg_start     : t_sg_start;
-  signal s_sg_stop      : t_sg_stop;
+  signal s_sg_start     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_sg_stop      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_sg_poly      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   signal s_sound_on     : std_logic;
 
@@ -259,6 +261,7 @@ begin
     o_sg_vel        => s_sg_vel,
     o_sg_start      => s_sg_start,
     o_sg_stop       => s_sg_stop,
+    o_sg_poly       => s_sg_poly,
     o_display_a     => s_display
   );
 
