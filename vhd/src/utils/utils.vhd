@@ -15,6 +15,10 @@ package UTILS_PKG is
 
   -- sequencer core constants (status register)
   constant SEQ_TRACKS     : natural := 8;   -- available tracks
+  constant SEQ_NOTE_SIZE  : integer := 7;   -- size of note in sequencer
+  constant SEQ_VEL_SIZE   : integer := 7;   -- size of vel in sequencer
+
+  -- general status constants
   constant ST_TRACK_SIZE  : natural := 3;   -- bits to represent avail tracks
 
   constant ST_TSS_SIZE    : natural := 11;  -- timestamp in seconds
@@ -37,6 +41,12 @@ package UTILS_PKG is
   -- memory constants (memory byte addressable)
   constant MEMORY_SIZE    : integer := 26;    -- 64 MB
   constant MEMORY_TR_SIZE : integer := 8192;  -- 8KB per track (1k sample per track)
+
+  -- sound generator constants
+  constant SAMPLE_WIDTH   : integer := 8;     -- bit width of sound samples
+  constant SAMPLE_FREQ    : integer := 44100; -- sampling frequency of sound samples
+  constant MAX_POLYPHONY  : integer := 7;     -- max number of notes played at the same time
+  constant SMP_MEM_SIZE   : integer := 16;    -- address bit width of sample memory
 
   -- functions
   function log2 (X : positive)  return natural;                   -- Y = log2(X)
@@ -82,8 +92,10 @@ package UTILS_PKG is
   type t_midi_data      is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
   type t_midi_ts        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_TIME_SIZE - 1  downto 0);
 
-  type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
-  type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MIDI_DATA_SIZE - 1 downto 0);
+  type t_sg_patch       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
+  type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
+  type t_sample_idx     is array (MAX_POLYPHONY - 1 downto 0) of unsigned(SMP_MEM_SIZE - 1 downto 0);
 
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;
