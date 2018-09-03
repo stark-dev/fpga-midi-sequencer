@@ -406,7 +406,7 @@ begin
   );
 
   SOUND_GEN_GENERATE:
-  for i in 0 to MAX_POLYPHONY - 1 generate
+  for i in 0 to SEQ_TRACKS - 1 generate
     SOUND_GEN_X : SIMPLE_SOUND_GEN
     generic map (
       g_sample_width  => 8,
