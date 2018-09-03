@@ -50,7 +50,7 @@ begin
     end if;
   end process;
 
-  p_sound_ctrl: process(s_sg_fsm)
+  p_sound_ctrl: process(s_sg_fsm, i_evt_data)
   begin
     case s_sg_fsm is
       when st_reset   =>
