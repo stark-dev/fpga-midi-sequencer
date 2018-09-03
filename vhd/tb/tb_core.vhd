@@ -155,6 +155,47 @@ port (
 );
 end component;
 
+component SIMPLE_SOUND_GEN is
+generic (
+  g_sample_width  : integer := 8;
+  g_smp_mem_size  : integer := 16
+);
+port (
+  i_clk           : in  std_logic;
+  i_reset_n       : in  std_logic;
+
+  i_sound_on      : in  std_logic;
+  i_patch         : in  std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  i_poly          : in  std_logic;
+
+  i_sample_clk    : in  std_logic;
+
+  i_start         : in  std_logic;
+  i_stop          : in  std_logic;
+  i_note          : in  std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
+  i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
+
+  o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
+  o_sample_index  : out t_sample_idx
+);
+end component;
+
+component SAMPLE_CLOCK is
+generic (
+  g_ext_clock     : integer := 50000000;
+  g_sample_freq   : integer := 44100
+);
+port (
+  i_clk           : in  std_logic;
+  i_reset_n       : in  std_logic;
+
+  i_clk_enable    : in  std_logic;
+
+  o_sample_clk    : out std_logic
+);
+end component;
+
   -- common
   constant c_ext_clock    : integer := 50000000;
   constant c_clock        : integer := 1000000000/(2*c_ext_clock);
@@ -214,7 +255,11 @@ end component;
   signal s_sg_poly      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   signal s_sound_on     : std_logic;
+  signal s_sample_clk   : std_logic;
   signal s_sg_patch     : t_sg_patch;
+  signal s_sg_patch_2   : t_sg_patch; -- TODO change
+  signal s_sg_poly_cnt  : t_poly_cnt;
+  signal s_sample_index : t_sample_idx;
 
   -- ext module ready
   signal s_pb_q_ready   : std_logic;
@@ -358,6 +403,48 @@ begin
     o_data          => s_mem_data,
     o_mem_ready     => s_data_ready,
     o_mem_error     => s_mem_error
+  );
+
+  SOUND_GEN_GENERATE:
+  for i in 0 to MAX_POLYPHONY - 1 generate
+    SOUND_GEN_X : SIMPLE_SOUND_GEN
+    generic map (
+      g_sample_width  => 8,
+      g_smp_mem_size  => 8
+    )
+    port map (
+      i_clk           => s_clk,
+      i_reset_n       => s_rst,
+
+      i_sound_on      => s_sound_on,
+      i_patch         => s_sg_patch(i),
+      i_poly          => s_sg_poly(i),
+
+      i_sample_clk    => s_sample_clk,
+
+      i_start         => s_sg_start(i),
+      i_stop          => s_sg_stop(i),
+      i_note          => s_sg_note(i),
+      i_vel           => s_sg_vel(i),
+
+      o_patch         => s_sg_patch_2(i),
+      o_poly_cnt      => s_sg_poly_cnt(i),
+      o_sample_index  => s_sample_index
+    );
+  end generate;
+
+  SAMPLE_CLK : SAMPLE_CLOCK
+  generic map (
+    g_ext_clock     => 50000000,
+    g_sample_freq   => 500000
+  )
+  port map (
+    i_clk           => s_clk,
+    i_reset_n       => s_rst,
+
+    i_clk_enable    => s_sound_on,
+
+    o_sample_clk    => s_sample_clk
   );
 
   clock_gen : process
