@@ -46,6 +46,7 @@ package UTILS_PKG is
   constant SAMPLE_WIDTH   : integer := 8;     -- bit width of sound samples
   constant SAMPLE_FREQ    : integer := 44100; -- sampling frequency of sound samples
   constant MAX_POLYPHONY  : integer := 7;     -- max number of notes played at the same time
+  constant MAX_POLY_BIT   : integer := 3;     -- bit size of max poly counter (change accordingly)
   constant SMP_MEM_SIZE   : integer := 16;    -- address bit width of sample memory
 
   -- functions
@@ -95,7 +96,8 @@ package UTILS_PKG is
   type t_sg_patch       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
   type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
-  type t_sample_idx     is array (MAX_POLYPHONY - 1 downto 0) of unsigned(SMP_MEM_SIZE - 1 downto 0);
+  type t_poly_cnt       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLY_BIT - 1 downto 0);
+  type t_sample_idx     is array (MAX_POLYPHONY - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
 
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;

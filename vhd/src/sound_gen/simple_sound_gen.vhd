@@ -26,7 +26,7 @@ port (
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
   o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
-  o_poly_cnt      : out std_logic_vector(up_int_log2(MAX_POLYPHONY) - 1 downto 0);
+  o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
   o_sample_index  : out t_sample_idx
 );
 end entity;
@@ -92,9 +92,9 @@ end component;
   signal s_sample_inc     : t_sample_inc;
 
   -- max polyphony counter
-  signal s_max_poly       : unsigned(up_int_log2(MAX_POLYPHONY) - 1 downto 0);
-  signal s_max_poly_start : unsigned(up_int_log2(MAX_POLYPHONY) - 1 downto 0);
-  signal s_max_poly_end   : unsigned(up_int_log2(MAX_POLYPHONY) - 1 downto 0);
+  signal s_max_poly       : unsigned(MAX_POLY_BIT - 1 downto 0);
+  signal s_max_poly_start : unsigned(MAX_POLY_BIT - 1 downto 0);
+  signal s_max_poly_end   : unsigned(MAX_POLY_BIT - 1 downto 0);
   signal s_max_poly_tc    : std_logic;
 
 
@@ -111,7 +111,7 @@ begin
 
     for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
       if v_out_idx <= (MAX_POLYPHONY - 1) and s_sound_table(i)(START_STOP_N) = '1' then
-        o_sample_index(v_out_idx) <= unsigned(s_sound_table(i)(SAMPLE_ID_RANGE));
+        o_sample_index(v_out_idx) <= s_sound_table(i)(SAMPLE_ID_RANGE);
         v_out_idx := v_out_idx + 1;
       end if;
     end loop;
