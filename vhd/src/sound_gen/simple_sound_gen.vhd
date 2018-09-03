@@ -208,4 +208,6 @@ begin
     end if;
   end process;
 
+  s_max_poly_tc <= '1' when s_max_poly = s_max_poly_end else '0';
+
 end architecture;
