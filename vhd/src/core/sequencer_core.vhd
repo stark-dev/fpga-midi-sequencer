@@ -192,8 +192,10 @@ end component;
   signal s_ts_frac        : std_logic_vector(ST_TSF_SIZE - 1 downto 0);
   signal s_ts_secs        : std_logic_vector(ST_TSS_SIZE - 1 downto 0);
 
-  signal s_ts_frac_end    : std_logic_vector(ST_TSF_SIZE - 1 downto 0);
-  signal s_ts_secs_end    : std_logic_vector(ST_TSS_SIZE - 1 downto 0);
+  signal s_ts_current     : std_logic_vector(SEQ_TIME_SIZE - 1 downto 0);
+
+  signal s_ts_end_r_en    : std_logic;
+  signal s_ts_end         : std_logic_vector(SEQ_TIME_SIZE - 1 downto 0);
 
   -- sequencer status
   signal s_play_pause_n   : std_logic;
@@ -293,10 +295,12 @@ begin
   s_tr_mute         <= i_tr_mute;
   s_tr_solo         <= i_tr_solo;
 
-  s_ts_frac_end     <= (others => '1'); -- TODO set rec end
-  s_ts_secs_end     <= (others => '1');
+  -- current timestamp
+  s_ts_current(ST_TS_RESERV) <= (others => '0');
+  s_ts_current(ST_TSS_RANGE) <= s_ts_secs;
+  s_ts_current(ST_TSF_RANGE) <= s_ts_frac;
 
-  s_play_end        <= '1' when (s_ts_frac = s_ts_frac_end) and (s_ts_secs = s_ts_secs_end) else
+  s_play_end        <= '1' when (s_ts_current = s_ts_end) else
                        '1' when and_reduce(i_pb_end) = '1' else
                        '0';
 
@@ -356,6 +360,16 @@ begin
     i_restart       => s_restart,
     o_ts_fraction   => s_ts_frac,
     o_ts_seconds    => s_ts_secs
+  );
+
+  TS_END : REGISTER_N
+  generic map (SEQ_TIME_SIZE)
+  port map(
+    i_clk           => i_clk,
+    i_reset_n       => i_reset_n,
+    i_load_en       => s_ts_end_r_en,
+    i_par_in        => s_ts_current,
+    o_par_out       => s_ts_end
   );
 
   GEN_TRACK_STATUS:
@@ -545,7 +559,7 @@ begin
           end if;
 
         when st_end     =>
-          s_fsm_status  <= st_init;
+          s_fsm_status  <= st_stop;
 
         when st_stop    =>
           s_fsm_status  <= st_init;
@@ -569,6 +583,7 @@ begin
     case s_fsm_status is
       when st_reset   =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
@@ -579,6 +594,7 @@ begin
 
       when st_init    =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
@@ -589,6 +605,7 @@ begin
 
       when st_idle    =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
@@ -599,6 +616,7 @@ begin
 
       when st_play    =>
         s_play_pause_n    <= '1';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
@@ -609,6 +627,7 @@ begin
 
       when st_rec     =>
         s_play_pause_n    <= '1';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '1';
         s_restart         <= '0';
         s_sound_on        <= '1';
@@ -619,6 +638,7 @@ begin
 
       when st_stop    =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
@@ -629,8 +649,13 @@ begin
 
       when st_end     =>
         s_play_pause_n    <= '0';
+        if s_ts_current > s_ts_end then
+          s_ts_end_r_en     <= '1';
+        else
+          s_ts_end_r_en     <= '0';
+        end if;
         o_rec_mode        <= '0';
-        s_restart         <= '1';
+        s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
         s_menu_reset      <= '0';
@@ -639,6 +664,7 @@ begin
 
       when st_menu    =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
@@ -649,6 +675,7 @@ begin
 
       when others     =>
         s_play_pause_n    <= '0';
+        s_ts_end_r_en     <= '0';
         o_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
