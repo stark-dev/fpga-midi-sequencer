@@ -199,10 +199,6 @@ end component;
   signal s_uart_rx_end  : std_logic;
   signal s_uart_rx_err  : std_logic;
 
-  -- midi evt filter
-  signal s_evt_out      : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-  signal s_evt_ready    : std_logic;
-
   -- sound gen
   signal s_midi_ready   : std_logic;
   signal s_midi_data    : std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
@@ -235,9 +231,6 @@ end component;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
 begin
-  s_midi_ready    <= s_evt_ready;
-  s_midi_data     <= s_evt_out;
-
   s_data_reload   <= s_rst and not(s_restart);
 
   DUT : SEQUENCER_CORE
@@ -275,8 +268,8 @@ begin
     i_reset_n     => s_rst,
     i_new_data    => s_uart_rx_end,
     i_data_in     => s_rx_data,
-    o_midi_msg    => s_evt_out,
-    o_midi_ready  => s_evt_ready
+    o_midi_msg    => s_midi_data,
+    o_midi_ready  => s_midi_ready
   );
 
   TX: UART_TX
@@ -375,7 +368,7 @@ begin
       when mux_off  =>
         s_mem_wr_mux_in <= (others => '0');
       when mux_midi =>
-        s_mem_wr_mux_in <= (others => '0');
+        s_mem_wr_mux_in <= s_midi_data;
       when mux_ts   =>
         s_mem_wr_mux_in(ST_TS_RESERV) <= (others => '0');
         s_mem_wr_mux_in(ST_TSS_RANGE) <= s_ts_seconds;
@@ -1054,6 +1047,101 @@ begin
     wait for 12*c_uart_period;
 
     -- stop rec
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- menu
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 320 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- dec track
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- dec track
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '0';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- exit menu
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- play
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';

@@ -1,9 +1,66 @@
 #source scripts/vcom_core.scr
 
+quit -sim
+
 vsim -t ns TB_CORE
 
-add wave *
-add wave DUT/*
+add wave s_clk
+add wave s_rst
+add wave s_btn1
+add wave s_btn2
+add wave s_btn3
+add wave s_btn4
+add wave s_display
+add wave -divider
+
+add wave -unsigned s_ts_seconds
+add wave -unsigned s_ts_fraction
+add wave s_active_track
+add wave s_rec_mode
+add wave s_restart
+add wave -divider
+
+add wave s_midi_ready
+add wave s_midi_data
+add wave -divider
+
+add wave s_pb_q_ready
+add wave s_pb_ready
+add wave s_pb_end
+add wave s_pb_data
+add wave -divider
+
+add wave s_mem_read
+add wave s_mem_write
+add wave -unsigned s_mem_address
+add wave s_mem_data
+add wave s_mem_wr_mux
+add wave s_mem_wr_mux_in
+add wave -divider
+
+add wave DUT/s_fsm_status
+add wave DUT/s_menu_option
+add wave DUT/s_modules_ready
+add wave -divider
+
+add wave DUT/s_play_pause_n
+add wave DUT/s_play_end
+add wave DUT/s_restart
+add wave DUT/s_main_vol
+add wave -divider
+
+add wave DUT/s_tr_status
+add wave DUT/s_track_omni
+add wave DUT/s_track_poly
+add wave DUT/s_track_rec
+add wave DUT/s_track_solo
+add wave DUT/s_track_mono
+add wave DUT/s_track_pan
+add wave DUT/s_track_vol
+add wave DUT/s_track_patch
+add wave -divider
+
+#config wave -signalnamewidth 1
 
 set NumericStdNoWarnings 1
 run 0 ns
