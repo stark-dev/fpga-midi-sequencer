@@ -45,7 +45,8 @@ begin
         if s_tc = '1' then
           s_count <= (others => '0');
         else
-          s_count <= s_count + unsigned(i_sample_inc);
+          -- s_count <= s_count + unsigned(i_sample_inc); -- TODO fix
+          s_count <= s_count + 1;
         end if;
       end if;
     end if;

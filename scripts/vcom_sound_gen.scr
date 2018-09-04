@@ -1,3 +1,4 @@
 vcom vhd/src/sound_gen/sample_clock.vhd
+vcom vhd/src/sound_gen/sample_encoder.vhd
 vcom vhd/src/sound_gen/sample_index_cnt.vhd
 vcom vhd/src/sound_gen/simple_sound_gen.vhd
