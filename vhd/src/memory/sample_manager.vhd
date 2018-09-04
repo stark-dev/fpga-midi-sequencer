@@ -20,12 +20,12 @@ port (
 
   i_data_ready    : in  std_logic;
   i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  i_mem_error     : in  std_logic;
 
   o_mem_read      : out std_logic;
   o_mem_write     : out std_logic;
   o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
   o_mem_wr_mux    : out t_mem_wr_mux;
-  o_mem_error     : out std_logic;
 
   o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
   o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -109,7 +109,6 @@ architecture BHV of SAMPLE_MANAGER is
   signal s_rec_request      : std_logic;
   signal s_rec_request_set  : std_logic;
   signal s_rec_request_rst  : std_logic;
-  signal s_mem_error        : std_logic;
 
 begin
 
@@ -154,12 +153,9 @@ begin
   end generate;
 
   o_mem_address <= std_logic_vector(s_mem_address);
-  o_mem_error   <= s_mem_error;
   o_init_ready  <= s_init_ready;
 
   s_active_track <= unsigned(i_active_track);
-
-  s_mem_error   <= or_reduce(s_sample_count_tc);
 
   s_sample_count_end <= (others => (others => '1'));
 
@@ -203,7 +199,7 @@ begin
             s_q_state <= st_write_data;
           elsif s_ts_match = '1' then
             s_q_state <= st_event;
-          elsif s_mem_error = '1' then
+          elsif i_mem_error = '1' then
             s_q_state <= st_error;
           else
             s_q_state <= st_scan;
