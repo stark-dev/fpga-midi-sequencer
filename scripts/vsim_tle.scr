@@ -1,4 +1,4 @@
-#source scripts/vcom_core.scr
+#source scripts/vcom_tle.scr
 
 quit -sim
 

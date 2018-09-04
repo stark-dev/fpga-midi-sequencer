@@ -27,7 +27,8 @@ port (
 
   o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
-  o_sample_index  : out t_sample_idx
+  o_sample_en     : out std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
+  o_sample_index  : out t_table_idx
 );
 end entity;
 
@@ -45,40 +46,40 @@ architecture BHV of SIMPLE_SOUND_GEN is
 --------------------------------------------------------------------------------
 -- components
 --------------------------------------------------------------------------------
-component SAMPLE_ID_COUNTER is
-generic (
-  g_size  : integer := 16
-);
-port (
-  i_clk           : in  std_logic;
-  i_reset_n       : in  std_logic;
-  i_enable        : in  std_logic;
-  i_tc_value      : in  std_logic_vector(g_size - 1 downto 0);
-  i_sample_inc    : in  std_logic_vector(g_size - 1 downto 0);
-
-  o_tc            : out std_logic;
-  o_sample_id     : out std_logic_vector(g_size - 1 downto 0)
-);
-end component;
-
-component REGISTER_N is
-generic (
-  N           : integer := 16);
-port (
-  i_clk         : in   std_logic;
-  i_reset_n     : in   std_logic;
-  i_load_en     : in   std_logic;
-  i_par_in      : in   std_logic_vector(N-1 downto 0);
-  o_par_out     : out  std_logic_vector(N-1 downto 0));
-end component;
-
-component SAMPLE_ENCODER is
-port (
-  i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
-  i_data      : in  t_table_idx;
-  o_output    : out t_sample_idx
-);
-end component;
+-- component SAMPLE_ID_COUNTER is
+-- generic (
+--   g_size  : integer := 16
+-- );
+-- port (
+--   i_clk           : in  std_logic;
+--   i_reset_n       : in  std_logic;
+--   i_enable        : in  std_logic;
+--   i_tc_value      : in  std_logic_vector(g_size - 1 downto 0);
+--   i_sample_inc    : in  std_logic_vector(g_size - 1 downto 0);
+--
+--   o_tc            : out std_logic;
+--   o_sample_id     : out std_logic_vector(g_size - 1 downto 0)
+-- );
+-- end component;
+--
+-- component REGISTER_N is
+-- generic (
+--   N           : integer := 16);
+-- port (
+--   i_clk         : in   std_logic;
+--   i_reset_n     : in   std_logic;
+--   i_load_en     : in   std_logic;
+--   i_par_in      : in   std_logic_vector(N-1 downto 0);
+--   o_par_out     : out  std_logic_vector(N-1 downto 0));
+-- end component;
+--
+-- component SAMPLE_ENCODER is
+-- port (
+--   i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
+--   i_data      : in  t_table_idx;
+--   o_output    : out t_sample_idx
+-- );
+-- end component;
 
 --------------------------------------------------------------------------------
 -- signals
@@ -100,14 +101,12 @@ end component;
   signal s_max_poly_end   : unsigned(MAX_POLY_BIT - 1 downto 0);
   signal s_max_poly_tc    : std_logic;
 
-  -- output
-  signal s_idx            : t_sample_idx;
-
 begin
   -- output  signal assignments
   o_patch           <= i_patch;
   o_poly_cnt        <= std_logic_vector(s_max_poly);
-  o_sample_index    <= s_idx;
+  o_sample_en       <= s_idx_cnt_en;
+  o_sample_index    <= s_idx_cnt;
 
   -- internal signal assignments
   s_idx_cnt_end     <= (others => '1');
@@ -152,20 +151,20 @@ begin
   --   );
   -- end generate;
 
-  p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
-    variable idx : integer range 0 to MAX_POLYPHONY;
-  begin
-    s_idx <= (others => (others => '0'));
-    idx := 0;
-
-    for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
-      if s_idx_cnt_en(i) = '1' then
-        s_idx(idx) <= s_idx_cnt(i);
-        idx := idx + 1;
-      end if;
-    end loop;
-
-  end process;
+  -- p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
+  --   variable idx : integer range 0 to MAX_POLYPHONY;
+  -- begin
+  --   s_idx <= (others => (others => '0'));
+  --   idx := 0;
+  --
+  --   for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
+  --     if s_idx_cnt_en(i) = '1' then
+  --       s_idx(idx) <= s_idx_cnt(i);
+  --       idx := idx + 1;
+  --     end if;
+  --   end loop;
+  --
+  -- end process;
 
   p_table_vel: process(i_reset_n, i_clk)
   begin

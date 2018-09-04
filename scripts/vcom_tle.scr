@@ -1,0 +1,10 @@
+source scripts/vcom_basics.scr
+source scripts/vcom_uart.scr
+source scripts/vcom_midi.scr
+source scripts/vcom_display.scr
+source scripts/vcom_memory.scr
+source scripts/vcom_sound_gen.scr
+source scripts/vcom_core.scr
+
+vcom vhd/src/tle/tle.vhd
+vcom vhd/tb/tb_tle.vhd

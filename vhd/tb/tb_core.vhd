@@ -177,7 +177,8 @@ port (
 
   o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
-  o_sample_index  : out t_sample_idx
+  o_sample_en     : out std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
+  o_sample_index  : out t_table_idx
 );
 end component;
 
@@ -259,7 +260,7 @@ end component;
   signal s_sg_patch     : t_sg_patch;
   signal s_sg_patch_2   : t_sg_patch; -- TODO change
   signal s_sg_poly_cnt  : t_poly_cnt;
-  signal s_sample_index : t_sample_idx;
+  signal s_sample_index : t_table_idx;
 
   -- ext module ready
   signal s_pb_q_ready   : std_logic;
