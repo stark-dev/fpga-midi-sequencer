@@ -409,8 +409,8 @@ begin
   for i in 0 to SEQ_TRACKS - 1 generate
     SOUND_GEN_X : SIMPLE_SOUND_GEN
     generic map (
-      g_sample_width  => 8,
-      g_smp_mem_size  => 8
+      g_sample_width  => SAMPLE_WIDTH,
+      g_smp_mem_size  => SMP_MEM_SIZE
     )
     port map (
       i_clk           => s_clk,
