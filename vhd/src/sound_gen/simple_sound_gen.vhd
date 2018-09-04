@@ -26,9 +26,8 @@ port (
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
   o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
-  o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
-  o_sample_en     : out std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
-  o_sample_index  : out t_table_idx
+  o_sample_en     : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  o_sample_idx    : out t_sound_gen_out
 );
 end entity;
 
@@ -46,40 +45,15 @@ architecture BHV of SIMPLE_SOUND_GEN is
 --------------------------------------------------------------------------------
 -- components
 --------------------------------------------------------------------------------
--- component SAMPLE_ID_COUNTER is
--- generic (
---   g_size  : integer := 16
--- );
--- port (
---   i_clk           : in  std_logic;
---   i_reset_n       : in  std_logic;
---   i_enable        : in  std_logic;
---   i_tc_value      : in  std_logic_vector(g_size - 1 downto 0);
---   i_sample_inc    : in  std_logic_vector(g_size - 1 downto 0);
---
---   o_tc            : out std_logic;
---   o_sample_id     : out std_logic_vector(g_size - 1 downto 0)
--- );
--- end component;
---
--- component REGISTER_N is
--- generic (
---   N           : integer := 16);
--- port (
---   i_clk         : in   std_logic;
---   i_reset_n     : in   std_logic;
---   i_load_en     : in   std_logic;
---   i_par_in      : in   std_logic_vector(N-1 downto 0);
---   o_par_out     : out  std_logic_vector(N-1 downto 0));
--- end component;
---
--- component SAMPLE_ENCODER is
--- port (
---   i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
---   i_data      : in  t_table_idx;
---   o_output    : out t_sample_idx
--- );
--- end component;
+
+component SAMPLE_ENCODER is
+port (
+  i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
+  i_data      : in  t_sound_table;
+  o_enable    : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  o_output    : out t_sound_gen_out
+);
+end component;
 
 --------------------------------------------------------------------------------
 -- signals
@@ -92,8 +66,8 @@ architecture BHV of SIMPLE_SOUND_GEN is
   signal s_idx_cnt_en     : std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
   signal s_idx_cnt_tc     : std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
   signal s_idx_cnt_end    : std_logic_vector(g_smp_mem_size - 1 downto 0);
-  signal s_idx_cnt        : t_table_idx;
-  signal s_sample_inc     : t_table_idx;
+  signal s_idx_cnt        : t_sound_table;
+  signal s_sample_inc     : t_sound_table;
 
   -- max polyphony counter
   signal s_max_poly       : unsigned(MAX_POLY_BIT - 1 downto 0);
@@ -104,9 +78,6 @@ architecture BHV of SIMPLE_SOUND_GEN is
 begin
   -- output  signal assignments
   o_patch           <= i_patch;
-  o_poly_cnt        <= std_logic_vector(s_max_poly);
-  o_sample_en       <= s_idx_cnt_en;
-  o_sample_index    <= s_idx_cnt;
 
   -- internal signal assignments
   s_idx_cnt_end     <= (others => '1');
@@ -116,55 +87,13 @@ begin
   s_max_poly_end    <= (others => '1');
 
   -- components
-  -- SAMPLE_ENC : SAMPLE_ENCODER
-  -- port map (
-  --   i_enable        => s_idx_cnt_en,
-  --   i_data          => s_idx_cnt,
-  --   o_output        => o_sample_index
-  -- );
-
-  -- SOUND_TABLE_VEL_GEN:
-  -- for i in 0 to 2**SEQ_NOTE_SIZE - 1 generate
-  --   SOUND_TABLE_VEL_X : REGISTER_N
-  --   generic map (SEQ_VEL_SIZE)
-  --   port map (
-  --     i_clk         => i_clk,
-  --     i_reset_n     => i_reset_n,
-  --     i_load_en     => s_vel_enable(i),
-  --     i_par_in      => i_vel,
-  --     o_par_out     => s_table_vel(i)
-  --   );
-  -- end generate;
-
-  -- SOUND_TABLE_IDX_GEN:
-  -- for i in 0 to 2**SEQ_NOTE_SIZE - 1 generate
-  --   SOUND_TABLE_IDX_X : SAMPLE_ID_COUNTER
-  --   generic map (g_smp_mem_size)
-  --   port map (
-  --     i_clk         => i_clk,
-  --     i_reset_n     => s_idx_cnt_en(i), -- same as reset_n, when enabled reset_n is at 1
-  --     i_enable      => s_idx_cnt_en(i),
-  --     i_tc_value    => s_idx_cnt_end,
-  --     i_sample_inc  => s_sample_inc(i),
-  --     o_tc          => s_idx_cnt_tc(i),
-  --     o_sample_id   => s_idx_cnt(i)
-  --   );
-  -- end generate;
-
-  -- p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
-  --   variable idx : integer range 0 to MAX_POLYPHONY;
-  -- begin
-  --   s_idx <= (others => (others => '0'));
-  --   idx := 0;
-  --
-  --   for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
-  --     if s_idx_cnt_en(i) = '1' then
-  --       s_idx(idx) <= s_idx_cnt(i);
-  --       idx := idx + 1;
-  --     end if;
-  --   end loop;
-  --
-  -- end process;
+  SAMPLE_ENC : SAMPLE_ENCODER
+  port map (
+    i_enable        => s_idx_cnt_en,
+    i_data          => s_idx_cnt,
+    o_enable        => o_sample_en,
+    o_output        => o_sample_idx
+  );
 
   p_table_vel: process(i_reset_n, i_clk)
   begin
