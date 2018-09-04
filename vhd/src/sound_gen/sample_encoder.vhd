@@ -8,33 +8,34 @@ use work.UTILS_PKG.all;
 entity SAMPLE_ENCODER is
 port (
   i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
-  i_data      : in  t_table_idx;
-  o_output    : out t_sample_idx
+  i_data      : in  t_sound_table;
+  o_enable    : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  o_output    : out t_sound_gen_out
 );
 end entity;
 
 architecture BHV of SAMPLE_ENCODER is
-  signal s_idx : t_sample_idx;
+  signal s_en  : std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  signal s_out : t_sound_gen_out;
 
 begin
 
-  p_output: process(s_idx)
-  begin
-    for i in 0 to MAX_POLYPHONY - 1 loop
-      o_output(i) <= s_idx(i);
-    end loop;
-  end process;
+  o_enable <= s_en;
+  o_output <= s_out;
 
   p_test: process(i_enable, i_data)
-    variable idx : integer range 0 to MAX_POLYPHONY;
+    variable v_idx : integer range 0 to MAX_POLYPHONY;
   begin
-    s_idx <= (others => (others => '0'));
-    idx := 0;
+    s_en  <= (others => '0');
+    s_out <= (others => (others => '0'));
+
+    v_idx := 0;
 
     for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
       if i_enable(i) = '1' then
-        s_idx(idx) <= i_data(i);
-        idx := idx + 1;
+        s_en(v_idx)  <= '1';
+        s_out(v_idx) <= i_data(i);
+        v_idx := v_idx + 1;
       end if;
     end loop;
 

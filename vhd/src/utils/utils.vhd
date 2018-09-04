@@ -97,9 +97,13 @@ package UTILS_PKG is
   type t_sg_patch       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
   type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
-  type t_poly_cnt       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLY_BIT - 1 downto 0);
-  type t_sample_idx     is array (MAX_POLYPHONY - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
-  type t_table_idx      is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
+
+  -- sound generator
+  type t_sound_table    is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
+  type t_sound_gen_out  is array (MAX_POLYPHONY - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
+
+  type t_sample_enable  is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  type t_sample_idx     is array (SEQ_TRACKS - 1 downto 0) of t_sound_gen_out;
 
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;
