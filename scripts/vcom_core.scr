@@ -3,9 +3,12 @@ source scripts/vcom_uart.scr
 source scripts/vcom_midi.scr
 source scripts/vcom_display.scr
 source scripts/vcom_memory.scr
+source scripts/vcom_sound_gen.scr
 vcom vhd/src/core/sl_button.vhd
 vcom vhd/src/core/timestamp_gen.vhd
 vcom vhd/src/core/track_status.vhd
 vcom vhd/src/core/playback_engine.vhd
 vcom vhd/src/core/sequencer_core.vhd
+vcom vhd/src/core/tle.vhd
 vcom vhd/tb/tb_core.vhd
+vcom vhd/tb/tb_tle.vhd

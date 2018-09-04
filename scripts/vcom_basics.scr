@@ -1,2 +1,2 @@
-vcom vhd/src/utils/*
+vcom vhd/src/utils/utils.vhd
 vcom vhd/src/basics/*
