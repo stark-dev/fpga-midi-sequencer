@@ -89,6 +89,7 @@ package UTILS_PKG is
   );
 
   type t_display_array  is array (DISPLAY_SIZE - 1 downto 0) of t_display_out;
+  type t_display_if     is array (DISPLAY_SIZE - 1 downto 0) of std_logic_vector(6 downto 0);
 
   type t_midi_data      is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
   type t_midi_ts        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_TIME_SIZE - 1  downto 0);
