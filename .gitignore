@@ -5,6 +5,10 @@ incremental_db
 hc_output
 output_files
 *.ipinfo
+*.qpf
+*.qsf
+*.qws
+c5_pin_model_dump.txt
 
 # modelsim working dir
 work
