@@ -45,7 +45,9 @@ architecture BHV of SIMPLE_SOUND_GEN is
   subtype  VEL_RANGE         is natural range SEQ_VEL_SIZE - 1 downto 0;
   constant START_STOP_N      : natural := SEQ_VEL_SIZE;
 
-  type t_sound_table is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(SOUND_TABLE_ROW - 1 downto 0);
+  type t_table_vel   is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
+  type t_table_idx   is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(g_smp_mem_size - 1 downto 0);
+
   type t_sample_inc  is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(g_smp_mem_size - 1 downto 0);
 
 --------------------------------------------------------------------------------
@@ -82,13 +84,14 @@ end component;
 -- signals
 --------------------------------------------------------------------------------
   -- sound table
-  signal s_sound_table    : t_sound_table;
   signal s_vel_enable     : std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
+  signal s_table_vel      : t_table_vel;
 
   -- sample index counters
   signal s_idx_cnt_en     : std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
   signal s_idx_cnt_tc     : std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
   signal s_idx_cnt_end    : std_logic_vector(g_smp_mem_size - 1 downto 0);
+  signal s_idx_cnt        : t_table_idx;
   signal s_sample_inc     : t_sample_inc;
 
   -- max polyphony counter
@@ -103,15 +106,15 @@ begin
   o_patch           <= i_patch;
   o_poly_cnt        <= std_logic_vector(s_max_poly);
 
-  p_sample_index_enc: process(s_sound_table)
+  p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
     variable v_out_idx : integer range 0 to MAX_POLYPHONY - 1;
   begin
     o_sample_index <= (others => (others => '0'));
     v_out_idx := 0;
 
     for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
-      if v_out_idx <= (MAX_POLYPHONY - 1) and s_sound_table(i)(START_STOP_N) = '1' then
-        o_sample_index(v_out_idx) <= s_sound_table(i)(SAMPLE_ID_RANGE);
+      if v_out_idx <= (MAX_POLYPHONY - 1) and s_idx_cnt_en(i) = '1' then
+        o_sample_index(v_out_idx) <= s_idx_cnt(i);
         v_out_idx := v_out_idx + 1;
       end if;
     end loop;
@@ -124,13 +127,6 @@ begin
   s_max_poly_start  <= (others => '0');
   s_max_poly_end    <= (others => '1');
 
-  p_start_stop_assign: process(s_idx_cnt_en)
-  begin
-    for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
-      s_sound_table(i)(START_STOP_N) <= s_idx_cnt_en(i);
-    end loop;
-  end process;
-
   -- components
   SOUND_TABLE_VEL_GEN:
   for i in 0 to 2**SEQ_NOTE_SIZE - 1 generate
@@ -141,7 +137,7 @@ begin
       i_reset_n     => i_reset_n,
       i_load_en     => s_vel_enable(i),
       i_par_in      => i_vel,
-      o_par_out     => s_sound_table(i)(VEL_RANGE)
+      o_par_out     => s_table_vel(i)
     );
   end generate;
 
@@ -156,7 +152,7 @@ begin
       i_tc_value    => s_idx_cnt_end,
       i_sample_inc  => s_sample_inc(i),
       o_tc          => s_idx_cnt_tc(i),
-      o_sample_id   => s_sound_table(i)(SAMPLE_ID_RANGE)
+      o_sample_id   => s_idx_cnt(i)
     );
   end generate;
 
@@ -197,11 +193,11 @@ begin
       s_max_poly <= (others => '0');
     elsif i_clk'event and i_clk = '1' then
       if i_start = '1' then
-        if s_max_poly /= s_max_poly_end and s_sound_table(to_integer(unsigned(i_note)))(START_STOP_N) = '0' then -- avoid two consecutive note on messages to increment counter
+        if s_max_poly /= s_max_poly_end and s_idx_cnt_en(to_integer(unsigned(i_note))) = '0' then -- avoid two consecutive note on messages to increment counter
           s_max_poly <= s_max_poly + 1;
         end if;
       elsif i_stop = '1' then
-        if s_max_poly /= s_max_poly_start and s_sound_table(to_integer(unsigned(i_note)))(START_STOP_N) = '1' then -- avoid two consecutive note off messages to decrement counter
+        if s_max_poly /= s_max_poly_start and s_idx_cnt_en(to_integer(unsigned(i_note))) = '1' then -- avoid two consecutive note off messages to decrement counter
           s_max_poly <= s_max_poly - 1;
         end if;
       end if;
