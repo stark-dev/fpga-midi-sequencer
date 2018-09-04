@@ -109,20 +109,6 @@ begin
   o_poly_cnt        <= std_logic_vector(s_max_poly);
   o_sample_index    <= s_idx;
 
-  -- p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
-  --   variable v_idx : integer range 0 to MAX_POLYPHONY;
-  -- begin
-  --   o_sample_index <= (others => (others => '0'));
-  --   v_idx := 0;
-  --
-  --   for i in 0 to 2**SEQ_NOTE_SIZE - 1 loop
-  --     if s_idx_cnt_en(i) = '1' then
-  --       o_sample_index(v_idx) <= s_idx_cnt(i);
-  --       v_idx := v_idx + 1;
-  --     end if;
-  --   end loop;
-  -- end process;
-
   -- internal signal assignments
   s_idx_cnt_end     <= (others => '1');
   s_sample_inc      <= (others => (others => '0'));-- to_unsigned(1, g_smp_mem_size))); -- TODO set sample increment for each note
@@ -166,7 +152,7 @@ begin
   --   );
   -- end generate;
 
-  p_test: process(s_idx_cnt_en, s_idx_cnt)
+  p_sample_index_enc: process(s_idx_cnt_en, s_idx_cnt)
     variable idx : integer range 0 to MAX_POLYPHONY;
   begin
     s_idx <= (others => (others => '0'));
@@ -223,7 +209,7 @@ begin
   end process;
 
   -- process
-  p_sound_table_rst :process(i_reset_n, i_clk)
+  p_sound_table_rst :process(i_reset_n, i_clk, i_sound_on)
   begin
     if i_reset_n = '0' or i_sound_on = '0' then
       s_idx_cnt_en <= (others => '0');

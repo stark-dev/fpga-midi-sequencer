@@ -256,7 +256,7 @@ begin
     end if;
   end process;
 
-  p_fsm_ctrl: process(s_q_state, s_track_scan, s_sample_count)
+  p_fsm_ctrl: process(s_q_state, s_track_scan, s_sample_count, s_active_track, s_evt_end)
   begin
     o_mem_read        <= '0';  -- read request
     o_mem_write       <= '0';  -- write request
@@ -412,6 +412,8 @@ begin
           else
             o_pb_end(i) <= '0';
           end if;
+        else
+          o_pb_end(i) <= '0';
         end if;
       end loop;
     end if;
