@@ -507,7 +507,7 @@ begin
     );
   end generate;
 
-  p_sound_evt_in_mux: process(i_midi_ready, i_midi_data, i_pb_ready, i_pb_data)
+  p_sound_evt_in_mux: process(s_active_tr, i_midi_ready, i_midi_data, i_pb_ready, i_pb_data)
   begin
     for i in 0 to SEQ_TRACKS - 1 loop
       if to_integer(s_active_tr) = i then
@@ -588,7 +588,7 @@ begin
     end if;
   end process;
 
-  p_core_fsm_ctrl: process(s_fsm_status, s_menu_option)
+  p_core_fsm_ctrl: process(s_fsm_status, s_menu_option, s_ts_current, s_ts_end)
   begin
     case s_fsm_status is
       when st_reset   =>
