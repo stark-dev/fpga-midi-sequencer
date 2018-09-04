@@ -176,9 +176,8 @@ port (
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
   o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
-  o_poly_cnt      : out std_logic_vector(MAX_POLY_BIT - 1 downto 0);
-  o_sample_en     : out std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
-  o_sample_index  : out t_table_idx
+  o_sample_en     : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
+  o_sample_idx    : out t_sound_gen_out
 );
 end component;
 
@@ -259,8 +258,9 @@ end component;
   signal s_sample_clk   : std_logic;
   signal s_sg_patch     : t_sg_patch;
   signal s_sg_patch_2   : t_sg_patch; -- TODO change
-  signal s_sg_poly_cnt  : t_poly_cnt;
-  signal s_sample_index : t_table_idx;
+
+  signal s_sample_enable  : t_sample_enable;
+  signal s_sample_index   : t_sample_idx;
 
   -- ext module ready
   signal s_pb_q_ready   : std_logic;
@@ -429,8 +429,8 @@ begin
       i_vel           => s_sg_vel(i),
 
       o_patch         => s_sg_patch_2(i),
-      o_poly_cnt      => s_sg_poly_cnt(i),
-      o_sample_index  => s_sample_index
+      o_sample_en     => s_sample_enable(i),
+      o_sample_idx    => s_sample_index(i)
     );
   end generate;
 
