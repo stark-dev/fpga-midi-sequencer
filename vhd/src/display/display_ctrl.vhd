@@ -133,10 +133,6 @@ begin
   p_disp_0_4_in: process(i_state, i_menu, s_ts_frac_1, i_track_patch, i_track_vol, i_track_pan)
   begin
     case i_state is
-      when st_play    =>
-        s_disp_0_4_in <= s_ts_frac_1;
-      when st_rec     =>
-        s_disp_0_4_in <= s_ts_frac_1;
       when st_menu    =>
         case i_menu is
           when op_patch     =>
@@ -318,9 +314,9 @@ begin
       when st_idle    =>
         s_display_array(0)  <= s_disp_0_3;
       when st_play    =>
-        s_display_array(0)  <= s_disp_0_4;
+        s_display_array(0)  <= ds_P;
       when st_rec     =>
-        s_display_array(0)  <= s_disp_0_4;
+        s_display_array(0)  <= ds_R;
       when st_menu    =>
         case i_menu is
           when op_track     =>
