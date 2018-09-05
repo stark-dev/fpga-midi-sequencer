@@ -164,11 +164,11 @@ begin
       s_pan <= to_unsigned(c_mid_pan, TR_PAN_SIZE);
     elsif i_clk'event and i_clk = '1' then
       if s_act = '1' then
-        if i_vol_up = '1' then
+        if i_pan_up = '1' then
           if s_pan /= to_unsigned(c_max_pan, TR_PAN_SIZE) then
             s_pan <= s_pan + 1;
           end if;
-        elsif i_vol_dn = '1' then
+        elsif i_pan_dn = '1' then
           if s_pan /= to_unsigned(c_min_pan, TR_PAN_SIZE) then
             s_pan <= s_pan - 1;
           end if;
