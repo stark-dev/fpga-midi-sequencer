@@ -61,16 +61,16 @@ architecture BHV of SEQUENCER_CORE is
   constant c_min_vol      : integer := 0;
 
   -- real
-  -- constant c_btn_size     : integer := 32;
-  -- constant c_btn_short    : integer := 2500000;
-  -- constant c_btn_long     : integer := 25000000;
-  -- constant c_ts_clock_div : integer := 12207;
+  constant c_btn_size     : integer := 32;
+  constant c_btn_short    : integer := 2500000;
+  constant c_btn_long     : integer := 25000000;
+  constant c_ts_clock_div : integer := 12207;
 
   -- testing with modelsim
-  constant c_btn_size     : integer := 8;
-  constant c_btn_short    : integer := 50;
-  constant c_btn_long     : integer := 150;
-  constant c_ts_clock_div : integer := 100;
+  -- constant c_btn_size     : integer := 8;
+  -- constant c_btn_short    : integer := 50;
+  -- constant c_btn_long     : integer := 150;
+  -- constant c_ts_clock_div : integer := 100;
 
 
 --------------------------------------------------------------------------------
