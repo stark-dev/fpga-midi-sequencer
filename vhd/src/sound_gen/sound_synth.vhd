@@ -99,15 +99,16 @@ architecture BHV of SOUND_SYNTH is
   signal s_sample_scan_end      : unsigned(MAX_POLY_BIT - 1 downto 0);
 
   -- track scan counter
-  signal s_track_scan           : unsigned(SEQ_TRACKS - 1 downto 0);
+  signal s_track_scan           : unsigned(up_int_log2(SEQ_TRACKS - 1) - 1 downto 0);
   signal s_track_scan_en        : std_logic;
   signal s_track_scan_rst       : std_logic;
   signal s_track_scan_tc        : std_logic;
-  signal s_track_scan_end       : unsigned(SEQ_TRACKS - 1 downto 0);
+  signal s_track_scan_end       : unsigned(up_int_log2(SEQ_TRACKS - 1) - 1 downto 0);
 
 begin
 
   o_clip            <= '0'; -- TODO add clip logic
+  o_sample_out      <= s_out_sample;
   o_mem_address(BANK_SEL_RANGE) <= i_patch(to_integer(s_track_scan));
   o_mem_address(SMP_IDX_RANGE)  <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
 
