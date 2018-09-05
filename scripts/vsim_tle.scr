@@ -80,6 +80,12 @@ add wave DUT/s_sample_enable
 add wave DUT/s_sample_index
 add wave -divider
 
+add wave DUT/SYNTH/*
+add wave -divider
+
+add wave DUT/SAMPLE_MEM/*
+add wave -divider
+
 #config wave -signalnamewidth 1
 
 set NumericStdNoWarnings 1

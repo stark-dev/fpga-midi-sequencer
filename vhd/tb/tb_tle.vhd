@@ -271,63 +271,6 @@ begin
     s_tr_solo <= (others => '0');
     wait for 100 ns;
 
-    -- play
-    s_rst     <= '1';
-    s_btn1    <= '0';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
-
-    s_rst     <= '1';
-    s_btn1    <= '1';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 1000 ns;
-
-    -- pause
-    s_rst     <= '1';
-    s_btn1    <= '0';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
-
-    s_rst     <= '1';
-    s_btn1    <= '1';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 500 ns;
-
-    -- play
-    s_rst     <= '1';
-    s_btn1    <= '0';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
-
-    s_rst     <= '1';
-    s_btn1    <= '1';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 1000 ns;
-
     -- vol up
     s_rst     <= '1';
     s_btn1    <= '1';
@@ -403,25 +346,6 @@ begin
     s_tr_mute <= (others => '0');
     s_tr_solo <= (others => '0');
     wait for 100 ns;
-
-    -- pause
-    s_rst     <= '1';
-    s_btn1    <= '0';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 120 * c_clock_half_p;
-
-    s_rst     <= '1';
-    s_btn1    <= '1';
-    s_btn2    <= '1';
-    s_btn3    <= '1';
-    s_btn4    <= '1';
-    s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
-    wait for 1000 ns;
 
     -- restart
     s_rst     <= '1';
@@ -594,7 +518,26 @@ begin
     s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
-    -- play
+    -- toggle rec
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '0';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    s_tr_solo <= (others => '0');
+    wait for 1000 ns;
+
+    -- start rec
     s_rst     <= '1';
     s_btn1    <= '0';
     s_btn2    <= '1';
@@ -640,12 +583,12 @@ begin
     -- note on : key
     s_uart_en       <= '1';
     s_tx_load_en    <= '1';
-    s_tx_data       <= "01000000";
+    s_tx_data       <= "00100000";
     wait for 2*c_clock_half_p;
 
     s_uart_en       <= '1';
     s_tx_load_en    <= '0';
-    s_tx_data       <= "01000000";
+    s_tx_data       <= "00100000";
     wait for 12*c_uart_period;
 
     -- note on : vel
@@ -673,12 +616,12 @@ begin
     -- note off : key
     s_uart_en       <= '1';
     s_tx_load_en    <= '1';
-    s_tx_data       <= "01000000";
+    s_tx_data       <= "00100000";
     wait for 2*c_clock_half_p;
 
     s_uart_en       <= '1';
     s_tx_load_en    <= '0';
-    s_tx_data       <= "01000000";
+    s_tx_data       <= "00100000";
     wait for 12*c_uart_period;
 
     -- note off : vel
