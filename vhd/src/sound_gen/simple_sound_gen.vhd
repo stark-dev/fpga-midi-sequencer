@@ -15,7 +15,6 @@ port (
   i_reset_n       : in  std_logic;
 
   i_sound_on      : in  std_logic;
-  i_patch         : in  std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   i_poly          : in  std_logic;
 
   i_sample_clk    : in  std_logic;
@@ -25,7 +24,6 @@ port (
   i_note          : in  std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
-  o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   o_sample_en     : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
   o_sample_idx    : out t_sound_gen_out
 );
@@ -81,9 +79,6 @@ end component;
   signal s_sample_enc_rst : std_logic;
 
 begin
-  -- output  signal assignments
-  o_patch           <= i_patch;
-
   -- internal signal assignments
   s_idx_cnt_end     <= (others => '1');
   s_sample_inc      <= (others => (others => '0'));-- to_unsigned(1, g_smp_mem_size))); -- TODO set sample increment for each note

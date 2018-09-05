@@ -27,6 +27,10 @@ entity TLE is
     -- display out
     o_display_a     : out t_display_if;
 
+    -- DAC
+    o_dac_out       : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+    o_clip          : out std_logic;
+
     -- rec memory
     i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
     i_mem_ready     : in  std_logic;
@@ -167,6 +171,28 @@ architecture STRUCT of TLE is
   );
 end component;
 
+component SOUND_SYNTH is
+port (
+  i_clk           : in  std_logic;
+  i_reset_n       : in  std_logic;
+
+  i_sound_on      : in  std_logic;
+  i_patch         : in  t_sg_patch;
+
+  i_sample_clk    : in  std_logic;        -- clock @ sample freq speed
+  i_sample_en     : in  t_sample_enable;  -- array of enable signals
+  i_sample_idx    : in  t_sample_idx;     -- array of sample indexes
+
+  i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
+
+  i_mem_ready     : in  std_logic;
+  o_clip          : out std_logic;  -- clip indicator
+  o_mem_read      : out std_logic;
+  o_mem_address   : out std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
+  o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
+);
+end component;
+
 component SIMPLE_SOUND_GEN is
 generic (
   g_sample_width  : integer := 8;
@@ -177,7 +203,6 @@ port (
   i_reset_n       : in  std_logic;
 
   i_sound_on      : in  std_logic;
-  i_patch         : in  std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   i_poly          : in  std_logic;
 
   i_sample_clk    : in  std_logic;
@@ -187,7 +212,6 @@ port (
   i_note          : in  std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
-  o_patch         : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   o_sample_en     : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
   o_sample_idx    : out t_sound_gen_out
 );
@@ -243,6 +267,9 @@ end component;
   signal s_uart_rx_end  : std_logic;
   signal s_uart_rx_err  : std_logic;
 
+  -- sound synthesis module
+  signal s_clip         : std_logic;
+
   -- sound gen
   signal s_midi_ready   : std_logic;
   signal s_midi_data    : std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
@@ -258,7 +285,6 @@ end component;
   signal s_sound_on     : std_logic;
   signal s_sample_clk   : std_logic;
   signal s_sg_patch     : t_sg_patch;
-  signal s_sg_patch_2   : t_sg_patch; -- TODO change
 
   signal s_sample_enable  : t_sample_enable;
   signal s_sample_index   : t_sample_idx;
@@ -274,8 +300,16 @@ end component;
   signal s_mem_wr_mux     : t_mem_wr_mux;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
+  -- sample memory
+  signal s_sample_mem_ok  : std_logic;
+  signal s_sample_mem_en  : std_logic;
+  signal s_sample_mem_rd  : std_logic;
+  signal s_sample_mem_add : std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
+  signal s_sample_mem_out : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+
 begin
   o_load_data     <= s_mem_wr_mux_in;
+  o_clip          <= s_clip;
 
   s_data_reload   <= i_reset_n and not(s_restart);
 
@@ -368,6 +402,27 @@ begin
     o_init_ready    => s_pb_q_ready
   );
 
+  SYNTH : SOUND_SYNTH
+  port map (
+    i_clk           => i_clk,
+    i_reset_n       => i_reset_n,
+
+    i_sound_on      => s_sound_on,
+    i_patch         => s_sg_patch,
+
+    i_sample_clk    => s_sample_clk,
+    i_sample_en     => s_sample_enable,
+    i_sample_idx    => s_sample_index,
+
+    i_mem_sample    => s_sample_mem_out,
+
+    i_mem_ready     => s_sample_mem_ok,
+    o_clip          => s_clip,
+    o_mem_read      => s_sample_mem_rd,
+    o_mem_address   => s_sample_mem_add,
+    o_sample_out    => o_dac_out
+  );
+
   SOUND_GEN_GENERATE:
   for i in 0 to SEQ_TRACKS - 1 generate
     SOUND_GEN_X : SIMPLE_SOUND_GEN
@@ -380,7 +435,6 @@ begin
       i_reset_n       => i_reset_n,
 
       i_sound_on      => s_sound_on,
-      i_patch         => s_sg_patch(i),
       i_poly          => s_sg_poly(i),
 
       i_sample_clk    => s_sample_clk,
@@ -390,7 +444,6 @@ begin
       i_note          => s_sg_note(i),
       i_vel           => s_sg_vel(i),
 
-      o_patch         => s_sg_patch_2(i),
       o_sample_en     => s_sample_enable(i),
       o_sample_idx    => s_sample_index(i)
     );
