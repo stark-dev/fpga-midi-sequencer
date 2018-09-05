@@ -60,11 +60,18 @@ architecture BHV of SEQUENCER_CORE is
   constant c_max_vol      : integer := 2**ST_VOL_SIZE - 1;
   constant c_min_vol      : integer := 0;
 
-  constant c_btn_size     : integer := 8; -- TODO set to proper values
+  -- real
+  -- constant c_btn_size     : integer := 32;
+  -- constant c_btn_short    : integer := 2500000;
+  -- constant c_btn_long     : integer := 25000000;
+  -- constant c_ts_clock_div : integer := 12207;
+
+  -- testing with modelsim
+  constant c_btn_size     : integer := 8;
   constant c_btn_short    : integer := 50;
   constant c_btn_long     : integer := 150;
+  constant c_ts_clock_div : integer := 100;
 
-  constant c_ts_clock_div : integer := 12207;
 
 --------------------------------------------------------------------------------
 -- types
@@ -361,8 +368,7 @@ begin
 
   -- components
   TS_GEN : TIMESTAMP_GEN
-  generic map (100) -- TODO remove comment (just for test purposes)
-  -- generic map (c_ts_clock_div)
+  generic map (c_ts_clock_div)
   port map (
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
@@ -757,7 +763,7 @@ begin
 
           when op_omni      =>
             if s_menu_op_toggle = '1' then
-              s_menu_option <= op_track_vol;
+              s_menu_option <= op_track;
             else
               s_menu_option <= op_omni;
             end if;
