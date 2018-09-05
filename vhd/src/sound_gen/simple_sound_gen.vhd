@@ -48,6 +48,8 @@ architecture BHV of SIMPLE_SOUND_GEN is
 
 component SAMPLE_ENCODER is
 port (
+  i_clk       : in  std_logic;
+  i_reset_n   : in  std_logic;
   i_enable    : in  std_logic_vector(2**SEQ_NOTE_SIZE - 1 downto 0);
   i_data      : in  t_sound_table;
   o_enable    : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
@@ -75,6 +77,9 @@ end component;
   signal s_max_poly_end   : unsigned(MAX_POLY_BIT - 1 downto 0);
   signal s_max_poly_tc    : std_logic;
 
+  -- encoder
+  signal s_sample_enc_rst : std_logic;
+
 begin
   -- output  signal assignments
   o_patch           <= i_patch;
@@ -86,9 +91,13 @@ begin
   s_max_poly_start  <= (others => '0');
   s_max_poly_end    <= (others => '1');
 
+  s_sample_enc_rst  <= i_reset_n and i_sound_on;
+
   -- components
   SAMPLE_ENC : SAMPLE_ENCODER
   port map (
+    i_clk           => i_sample_clk,
+    i_reset_n       => s_sample_enc_rst,
     i_enable        => s_idx_cnt_en,
     i_data          => s_idx_cnt,
     o_enable        => o_sample_en,

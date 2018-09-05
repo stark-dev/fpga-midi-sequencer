@@ -13,10 +13,16 @@ port (
   i_sound_on      : in  std_logic;
   i_patch         : in  t_sg_patch;
 
-  i_sample_clk    : in  std_logic;
-  i_sample_en     : in  t_sample_enable;
-  i_sample_idx    : in  t_sample_idx;
+  i_sample_clk    : in  std_logic;        -- clock @ sample freq speed
+  i_sample_en     : in  t_sample_enable;  -- array of enable signals
+  i_sample_idx    : in  t_sample_idx;     -- array of sample indexes
 
+  i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
+
+  i_mem_ready     : in  std_logic;
+  o_clip          : out std_logic;  -- clip indicator
+  o_mem_read      : out std_logic;
+  o_mem_address   : out std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
   o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
 );
 end entity;
@@ -30,7 +36,7 @@ architecture BHV of SOUND_SYNTH is
 --------------------------------------------------------------------------------
 -- types
 --------------------------------------------------------------------------------
-  type t_synth_fsm is (st_reset, st_idle, st_scan, st_write);
+  type t_synth_fsm is (st_reset, st_idle, st_update, st_read, st_wait, st_scan, st_write);
 
 --------------------------------------------------------------------------------
 -- components
@@ -70,7 +76,7 @@ architecture BHV of SOUND_SYNTH is
   signal s_next_sample_rst      : std_logic;
 
   -- mem sample
-  signal s_mem_sample           : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  -- signal s_mem_sample           : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
   signal s_mem_sample_ext       : std_logic_vector(2*SAMPLE_WIDTH - 1 downto 0);
 
   -- current sample register
@@ -101,10 +107,31 @@ architecture BHV of SOUND_SYNTH is
 
 begin
 
+  o_clip            <= '0'; -- TODO add clip logic
+  o_mem_address(BANK_SEL_RANGE) <= i_patch(to_integer(s_track_scan));
+  o_mem_address(SMP_IDX_RANGE)  <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
+
   s_sample_scan_end <= (others => '1');
+
+  s_track_scan_en   <= s_sample_scan_tc;
   s_track_scan_end  <= (others => '1');
 
-  s_track_scan_en <= s_sample_scan_tc;
+  s_next_sample_rst <= '1' when i_reset_n = '0' else
+                       '1' when s_fsm_state = st_scan else
+                       '0';
+
+  s_next_sample_set <= i_sample_clk;
+
+  s_out_sample_in <= s_current_sample(SAMPLE_WIDTH - 1 downto 0);
+
+  s_mem_sample_ext(SAMPLE_WIDTH - 1 downto 0) <= i_mem_sample;
+
+  p_sample_mem_ext: process(i_mem_sample)
+  begin
+    for i in SAMPLE_WIDTH to 2*SAMPLE_WIDTH - 1 loop
+      s_mem_sample_ext(i) <= i_mem_sample(SAMPLE_WIDTH - 1);
+    end loop;
+  end process;
 
   SAMPLE_SCAN_C : UP_COUNTER_MOD
   generic map ( MAX_POLY_BIT )
@@ -158,45 +185,102 @@ begin
           s_fsm_state <= st_idle;
         when st_idle      =>
           if s_next_sample = '1' then
-            s_fsm_state <= st_scan;
+            s_fsm_state <= st_update;
           else
             s_fsm_state <= st_idle;
           end if;
-        when st_scan      =>
-          if s_sample_scan_tc = '1' and s_track_scan_tc = '1' then
-            s_fsm_state <= st_write;
-          else
+        when st_update    =>
+          s_fsm_state <= st_read;
+        when st_read      =>
+          s_fsm_state <= st_wait;
+        when st_wait      =>
+          if i_mem_ready = '1' then
             s_fsm_state <= st_scan;
+          else
+            s_fsm_state <= st_wait;
           end if;
+        when st_scan      =>
+          s_fsm_state <= st_write;
         when st_write     =>
-          s_fsm_state <= st_idle;
+          if s_sample_scan_tc = '1' and s_track_scan_tc = '1' then
+            s_fsm_state <= st_update;
+          else
+            s_fsm_state <= st_read;
+          end if;
         when others       =>
           s_fsm_state <= st_reset;
       end case;
     end if;
   end process;
 
-  p_fsm_ctrl: process(s_fsm_state)
+  p_fsm_ctrl: process(s_fsm_state, i_mem_ready)
   begin
     case s_fsm_state is
       when st_reset     =>
         s_sample_scan_rst     <= '0';
         s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '0';
 
         s_current_sample_rst  <= '0';
+        s_current_sample_en   <= '0';
 
         s_out_sample_rst      <= '0';
         s_out_sample_en       <= '0';
 
-      when st_idle      =>
+      when st_update    =>  -- out sample <= current sample
         s_sample_scan_rst     <= '1';
         s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '0';
+        s_current_sample_en   <= '0';
+
+        s_out_sample_rst      <= '1';
+        s_out_sample_en       <= '1';
+
+      when st_idle      =>
+        s_sample_scan_rst     <= '1';
+        s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
+
+        s_track_scan_rst      <= '1';
+
+        s_current_sample_rst  <= '0';
+        s_current_sample_en   <= '0';
+
+        s_out_sample_rst      <= '1';
+        s_out_sample_en       <= '0';
+
+      when st_read      =>
+        s_sample_scan_rst     <= '1';
+        s_sample_scan_en      <= '0';
+        o_mem_read            <= '1';
+
+        s_track_scan_rst      <= '1';
+
+        s_current_sample_rst  <= '0';
+        s_current_sample_en   <= '0';
+
+        s_out_sample_rst      <= '1';
+        s_out_sample_en       <= '0';
+
+      when st_wait      =>
+        s_sample_scan_rst     <= '1';
+        s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
+
+        s_track_scan_rst      <= '1';
+
+        s_current_sample_rst  <= '0';
+        if i_mem_ready = '1' then
+          s_current_sample_en   <= '1';
+        else
+          s_current_sample_en   <= '0';
+        end if;
 
         s_out_sample_rst      <= '1';
         s_out_sample_en       <= '0';
@@ -204,10 +288,12 @@ begin
       when st_scan      =>
         s_sample_scan_rst     <= '1';
         s_sample_scan_en      <= '1';
+        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '1';
+        s_current_sample_en   <= '0';
 
         s_out_sample_rst      <= '1';
         s_out_sample_en       <= '0';
@@ -215,10 +301,12 @@ begin
       when st_write     =>
         s_sample_scan_rst     <= '1';
         s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '1';
+        s_current_sample_en   <= '0';
 
         s_out_sample_rst      <= '1';
         s_out_sample_en       <= '1';
@@ -226,21 +314,17 @@ begin
       when others       =>
         s_sample_scan_rst     <= '0';
         s_sample_scan_en      <= '0';
+        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '0';
 
         s_current_sample_rst  <= '0';
+        s_current_sample_en   <= '0';
 
         s_out_sample_rst      <= '0';
         s_out_sample_en       <= '0';
     end case;
   end process;
-
-  s_next_sample_rst <= '1' when i_reset_n = '0' else
-                       '1' when s_fsm_state = st_scan else
-                       '0';
-
-  s_next_sample_set <= i_sample_clk;
 
   p_next_sample: process(s_next_sample_set, s_next_sample_rst)
   begin
@@ -250,31 +334,6 @@ begin
       s_next_sample <= '1';
     end if;
   end process;
-
-  s_out_sample_in <= s_current_sample(SAMPLE_WIDTH - 1 downto 0);
-
-  p_mem_sample: process(i_patch, s_track_scan, s_sample_scan)
-  begin
-    case i_patch(to_integer(s_track_scan)) is
-      -- when 0      =>
-        -- sine mem
-        -- s_mem_sample <= sine_mem(to_integer(unsigned(s_sample_scan)));
-      -- when 1      =>
-        -- square mem
-        -- s_mem_sample <= (others => '0');
-      when others =>
-        s_mem_sample <= (others => '0');
-    end case;
-  end process;
-
-  p_sample_mem_ext: process(s_mem_sample)
-  begin
-    for i in SAMPLE_WIDTH to 2*SAMPLE_WIDTH - 1 loop
-      s_mem_sample_ext(i) <= s_mem_sample(SAMPLE_WIDTH - 1);
-    end loop;
-  end process;
-
-  s_mem_sample_ext(SAMPLE_WIDTH - 1 downto 0) <= s_mem_sample;
 
   p_current_sample_in: process(i_sample_en, s_track_scan, s_sample_scan, s_current_sample, s_mem_sample_ext)
   begin
