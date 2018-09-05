@@ -1,3 +1,7 @@
+-- MIDI sequencer - Top Level Entity
+-- Created by Mauro Guerrera <stark.devel@gmail.com>
+-- Target FPGA is Altera DE1-SoC 5CSEMA5F31C6N
+
 library ieee;
 
 use ieee.std_logic_1164.all;
