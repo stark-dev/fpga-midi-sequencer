@@ -47,7 +47,7 @@ package UTILS_PKG is
   constant SAMPLE_FREQ    : integer := 44100; -- sampling frequency of sound samples
   constant MAX_POLYPHONY  : integer := 7;     -- max number of notes played at the same time
   constant MAX_POLY_BIT   : integer := 3;     -- bit size of max poly counter (change accordingly)
-  constant SMP_MEM_SIZE   : integer := 8;    -- address bit width of sample memory
+  constant SMP_MEM_SIZE   : integer := 12;    -- address bit width of sample memory
 
   -- functions
   function log2 (X : positive)  return natural;                   -- Y = log2(X)
@@ -104,6 +104,9 @@ package UTILS_PKG is
 
   type t_sample_enable  is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLYPHONY - 1 downto 0);
   type t_sample_idx     is array (SEQ_TRACKS - 1 downto 0) of t_sound_gen_out;
+
+  -- sample memory
+  type t_sample_memory  is array (2**SMP_MEM_SIZE - 1 downto 0) of std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
 
   subtype BANK_SEL_RANGE is natural range TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto SMP_MEM_SIZE;
   subtype SMP_IDX_RANGE  is natural range SMP_MEM_SIZE - 1 downto 0;
