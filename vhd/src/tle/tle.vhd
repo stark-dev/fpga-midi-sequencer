@@ -217,6 +217,23 @@ port (
 );
 end component;
 
+component SAMPLE_MEMORY is
+	generic (
+		g_sample_width 	: integer := 8;
+		g_patch_width		: integer := 7;
+		g_mem_size			: integer := 12
+	);
+	port (
+		i_clk					: in  std_logic;
+		i_reset_n			: in  std_logic;
+		i_enable  		: in  std_logic;
+		i_read    		: in  std_logic;
+		i_address			: in  std_logic_vector(g_patch_width + g_mem_size - 1 downto 0);
+		o_mem_ready		: out std_logic;
+		o_mem_out			: out std_logic_vector(g_sample_width - 1 downto 0)
+	);
+end component;
+
 component SAMPLE_CLOCK is
 generic (
   g_ext_clock     : integer := 50000000;
@@ -312,6 +329,8 @@ begin
   o_clip          <= s_clip;
 
   s_data_reload   <= i_reset_n and not(s_restart);
+
+  s_sample_mem_en <= i_reset_n;
 
   CORE : SEQUENCER_CORE
   port map(
@@ -448,6 +467,22 @@ begin
       o_sample_idx    => s_sample_index(i)
     );
   end generate;
+
+  SAMPLE_MEM : SAMPLE_MEMORY
+	generic map (
+		g_sample_width 	=> SAMPLE_WIDTH,
+		g_patch_width		=> TR_PATCH_SIZE,
+		g_mem_size			=> SMP_MEM_SIZE
+	)
+	port map (
+		i_clk					=> i_clk,
+		i_reset_n			=> i_reset_n,
+		i_enable  		=> s_sample_mem_en,
+		i_read    		=> s_sample_mem_rd,
+		i_address			=> s_sample_mem_add,
+		o_mem_ready		=> s_sample_mem_ok,
+		o_mem_out			=> s_sample_mem_out
+	);
 
   SAMPLE_CLK : SAMPLE_CLOCK
   generic map (
