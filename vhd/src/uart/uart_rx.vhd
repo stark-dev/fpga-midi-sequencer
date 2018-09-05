@@ -155,7 +155,7 @@ begin
     end if;
   end process;
 
-  p_uart_fsm_state: process(i_uart_en, i_uart_rst_n, i_uart_in, s_rx_cnt_tc)
+  p_uart_fsm_state: process(i_uart_en, i_uart_rst_n, i_uart_in, s_rx_cnt_tc, s_uart_state)
   begin
     if i_uart_rst_n = '0' then
       s_uart_state <= st_idle;
@@ -340,7 +340,7 @@ begin
   end process;
 
 
-  p_parity_check: process(s_par_rg_val, s_par_bit)
+  p_parity_check: process(s_par_check, s_par_rg_val, s_par_bit)
   begin
     if g_parity_odd = false then
       s_par_error <= s_par_check and (s_par_bit xor s_par_rg_val);

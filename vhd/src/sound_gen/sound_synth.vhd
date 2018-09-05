@@ -212,7 +212,7 @@ begin
     end if;
   end process;
 
-  p_fsm_ctrl: process(s_fsm_state, i_mem_ready, i_sample_en)
+  p_fsm_ctrl: process(s_fsm_state, i_mem_ready, i_sample_en, s_track_scan, s_sample_scan)
   begin
     case s_fsm_state is
       when st_reset     =>

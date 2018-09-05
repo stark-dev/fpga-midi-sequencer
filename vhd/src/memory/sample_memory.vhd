@@ -89,7 +89,7 @@ begin
 		end if;
 	end process;
 
-	p_mem_out: process(i_enable, i_address)
+	p_mem_out: process(i_enable, i_address, s_sine_out, s_square_out)
 	begin
 		if i_enable = '1' then
 			case (to_integer(unsigned(i_address(BANK_SEL_RANGE)))) is

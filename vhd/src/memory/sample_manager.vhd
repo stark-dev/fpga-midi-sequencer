@@ -398,7 +398,7 @@ begin
     end if;
   end process;
 
-  p_playback_end: process(i_reset_n, s_init_ready, s_evt_data_r, s_active_track)
+  p_playback_end: process(i_reset_n, s_init_ready, s_evt_data_r, s_active_track, s_evt_end)
   begin
     if i_reset_n = '0' then
       o_pb_end <= (others => '0');
