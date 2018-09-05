@@ -5,12 +5,12 @@ use ieee.numeric_std.all;
 
 use work.UTILS_PKG.all;
 
-entity TB_SAMPLE_MEM is
-end TB_SAMPLE_MEM;
+entity TB_REC_MEM is
+end TB_REC_MEM;
 
-architecture TEST of TB_SAMPLE_MEM is
+architecture TEST of TB_REC_MEM is
 
-component SAMPLE_MEMORY is
+component REC_MEMORY is
 generic (
   g_mem_size      : integer := 8
 );
@@ -50,7 +50,7 @@ end component;
 
 begin
 
-  MEM : SAMPLE_MEMORY
+  MEM : REC_MEMORY
   generic map(MEM_SIZE)
   port map (
     i_clk           => s_clk,

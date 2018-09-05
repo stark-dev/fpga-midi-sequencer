@@ -137,7 +137,7 @@ architecture TEST of TB_CORE is
   );
 end component;
 
-component SAMPLE_MEMORY is
+component REC_MEMORY is
 generic (
   g_mem_size      : integer := 8
 );
@@ -391,7 +391,7 @@ begin
     o_init_ready    => s_pb_q_ready
   );
 
-  SAMPLE_MEM : SAMPLE_MEMORY
+  SAMPLE_MEM : REC_MEMORY
   generic map ( 10 )
   port map (
     i_clk           => s_clk,

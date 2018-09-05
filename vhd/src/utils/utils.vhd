@@ -105,6 +105,9 @@ package UTILS_PKG is
   type t_sample_enable  is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLYPHONY - 1 downto 0);
   type t_sample_idx     is array (SEQ_TRACKS - 1 downto 0) of t_sound_gen_out;
 
+  subtype BANK_SEL_RANGE is natural range TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto SMP_MEM_SIZE;
+  subtype SMP_IDX_RANGE  is natural range SMP_MEM_SIZE - 1 downto 0;
+
   -- midi message subtypes (according to MIDI protocol)
   subtype MIDI_CMD_RANGE  is natural range 7 downto 4;
   subtype MIDI_CH_RANGE   is natural range 3 downto 0;

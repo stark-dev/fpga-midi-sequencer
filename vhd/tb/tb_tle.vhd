@@ -63,7 +63,7 @@ architecture TEST of TB_TLE is
     );
   end component;
 
-  component SAMPLE_MEMORY is
+  component REC_MEMORY is
   generic (
     g_mem_size      : integer := 8
   );
@@ -172,7 +172,7 @@ begin
     o_uart_end    => s_uart_tx_end
   );
 
-  EVT_MEM : SAMPLE_MEMORY
+  EVT_MEM : REC_MEMORY
   generic map ( 10 )
   port map (
     i_clk           => s_clk,
