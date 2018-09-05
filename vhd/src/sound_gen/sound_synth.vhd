@@ -112,7 +112,7 @@ begin
   o_mem_address(BANK_SEL_RANGE) <= i_patch(to_integer(s_track_scan));
   o_mem_address(SMP_IDX_RANGE)  <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
 
-  s_sample_scan_end <= (others => '1');
+  s_sample_scan_end <= to_unsigned(MAX_POLYPHONY - 1, MAX_POLY_BIT);
 
   s_track_scan_en   <= s_sample_scan_tc;
   s_track_scan_end  <= (others => '1');
