@@ -258,16 +258,12 @@ end component;
 
   -- common
   constant c_ext_clock    : integer := 50000000;
-  constant c_clock        : integer := 1000000000/(2*c_ext_clock);
-  constant c_clock_half_p : time := c_clock * 1 ns;
   -- uart constants
-  constant c_baud_rate    : integer := 115200;
-  constant c_uart         : integer := 1000000000/c_baud_rate;
+  constant c_baud_rate    : integer := MIDI_BAUD_RATE;
   constant c_databits     : integer := 8;
   constant c_parity       : boolean := false;
   constant c_parity_odd   : boolean := false;
   constant c_stop_bits    : integer := 0;
-  constant c_uart_period  : time := c_uart * 1 ns;
 
   -- display
   signal s_display      : t_display_array;
@@ -486,8 +482,8 @@ begin
 
   SAMPLE_CLK : SAMPLE_CLOCK
   generic map (
-    g_ext_clock     => 50000000,
-    g_sample_freq   => 44100
+    g_ext_clock     => c_ext_clock,
+    g_sample_freq   => SAMPLE_FREQ
   )
   port map (
     i_clk           => i_clk,

@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 package UTILS_PKG is
 
   -- constants
-  constant MIDI_DATA_SIZE : natural := 7;   -- standard MIDI data
+  constant MIDI_BAUD_RATE : natural := 31250;   -- MIDI speed
+  constant MIDI_DATA_SIZE : natural := 7;       -- standard MIDI data
 
   -- sequencer constants (according to internal sequencer structure)
   constant MIDI_TYPE_SIZE : natural := 3;   -- configurable for future use
