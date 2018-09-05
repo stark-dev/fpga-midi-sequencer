@@ -22,9 +22,6 @@ architecture BHV of SAMPLE_ENCODER is
 
 begin
 
-  o_enable <= s_en;
-  o_output <= s_out;
-
   p_out:  process(i_reset_n, i_clk)
   begin
     if i_reset_n = '0' then
