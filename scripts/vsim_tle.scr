@@ -12,6 +12,8 @@ add wave s_btn2
 add wave s_btn3
 add wave s_btn4
 add wave s_display
+add wave s_dac_out
+add wave s_clip
 add wave -divider
 
 # core status and timestamp
@@ -80,10 +82,11 @@ add wave DUT/s_sample_enable
 add wave DUT/s_sample_index
 add wave -divider
 
-add wave DUT/SYNTH/*
-add wave -divider
-
-add wave DUT/SAMPLE_MEM/*
+add wave DUT/SYNTH/s_next_sample
+add wave DUT/SYNTH/s_fsm_state
+add wave DUT/SYNTH/s_current_sample
+add wave -unsigned DUT/SYNTH/s_sample_scan
+add wave -unsigned DUT/SYNTH/s_track_scan
 add wave -divider
 
 #config wave -signalnamewidth 1
