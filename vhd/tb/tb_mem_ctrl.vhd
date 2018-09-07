@@ -107,6 +107,7 @@ port map (
 
   input_gen: process
   begin
+    -- reset
     s_rst         <= '0';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 32));
@@ -114,6 +115,7 @@ port map (
     s_write       <= '0';
     wait for 10 ns;
 
+    -- wait init
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 32));
@@ -121,11 +123,27 @@ port map (
     s_write       <= '0';
     wait for 800 ns;
 
+    -- read
     s_rst         <= '1';
-    s_address     <= std_logic_vector(to_unsigned(0, 25));
+    s_address     <= std_logic_vector(to_unsigned(104, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 32));
     s_read        <= '1';
     s_write       <= '0';
+    wait for 50 ns;
+
+    s_rst         <= '1';
+    s_address     <= std_logic_vector(to_unsigned(0, 25));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_read        <= '0';
+    s_write       <= '0';
+    wait for 10 ns;
+
+    -- write
+    s_rst         <= '1';
+    s_address     <= std_logic_vector(to_unsigned(212, 25));
+    s_i_data      <= std_logic_vector(to_unsigned(120, 32));
+    s_read        <= '0';
+    s_write       <= '1';
     wait for 50 ns;
 
     s_rst         <= '1';
