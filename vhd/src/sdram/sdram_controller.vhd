@@ -217,6 +217,9 @@ architecture BHV of SDRAM_CONTROLLER is
   -- precharge to active delay
   constant c_trp_cycles             : integer := 2;
 
+  -- burst option
+  constant c_burst                  : integer := 1;
+
 
 --------------------------------------------------------------------------------
 -- signals
@@ -239,13 +242,14 @@ architecture BHV of SDRAM_CONTROLLER is
   signal s_col_address      : std_logic_vector(9 downto 0);
   signal s_bank_select      : std_logic_vector(1 downto 0);
   signal s_autoprecharge    : std_logic;
+  signal s_precharge_all    : std_logic;
 
+  signal s_up_low_n_mux     : std_logic;                     -- select upper or lower data register (1 -> upper, 0 -> lower)
   signal s_data_upper       : std_logic_vector(31 downto 16);
   signal s_data_lower       : std_logic_vector(15 downto 0);
 
   -- tri-state dram in/out control
   signal s_buf_in_out_n     : std_logic;                     -- 1 -> write, 0 -> read
-  signal s_dram_buf_in_mux  : std_logic;                     -- select upper or lower data register (1 -> upper, 0 -> lower)
   signal s_dram_buf_in      : std_logic_vector(15 downto 0); -- write to mem
   signal s_dram_buf_out     : std_logic_vector(15 downto 0); -- read from mem
 
@@ -318,13 +322,16 @@ begin
 
   o_dram_addr_d <= s_row_address                          when s_dram_fsm = st_activate else
                    "00" & s_autoprecharge & s_col_address when s_dram_fsm = st_rw else
+                   "00" & s_precharge_all & s_col_address when s_dram_fsm = st_pre else
                    s_mrs_value(12 downto 0)               when s_dram_fsm = st_init_mode else
                    (others => '0');
 
   io_dram_dq_d  <= s_dram_buf_in when s_buf_in_out_n = '1' else (others => 'Z');
 
   o_dram_ba_d   <= s_mrs_value(14 downto 13)  when s_dram_fsm = st_init_mode else
-                   s_bank_select              when (s_dram_fsm = st_activate or s_dram_fsm = st_rw) else
+                   s_bank_select              when s_dram_fsm = st_activate else
+                   s_bank_select              when s_dram_fsm = st_rw else
+                   s_bank_select              when s_dram_fsm = st_pre else
                    (others => '0');
 
   o_dram_udqm_d <= s_dram_dqm_val(1);
@@ -338,10 +345,10 @@ begin
   -- internal signal assignment
   s_refresh     <= '0'; -- TODO fix
 
-  s_dram_buf_in <= s_data_in_r(15 downto 0) when s_dram_buf_in_mux = '0' else
+  s_dram_buf_in <= s_data_in_r(15 downto 0) when s_up_low_n_mux = '0' else
                    s_data_in_r(31 downto 16);
 
-  s_dram_buf_in_mux  <= '0'; -- TODO fix (select upper or lower half word)
+  s_up_low_n_mux  <= '0'; -- TODO fix (select upper or lower half word)
 
   s_dram_buf_out                      <= io_dram_dq; -- TODO fix (set to io_dram_dq only when read)
 
@@ -519,7 +526,7 @@ begin
     end if;
   end process;
 
-  p_dram_fsm_ctrl: process(s_dram_fsm, s_delay_cnt_r, s_init_ref_cnt_i)
+  p_dram_fsm_ctrl: process(s_dram_fsm, s_delay_cnt_r, s_init_ref_cnt_r, i_read, i_write, s_refresh, s_up_low_n_mux)
   begin
     case s_dram_fsm is
       when st_rst         =>
@@ -529,6 +536,8 @@ begin
         s_clock_en        <= '0';
 
         s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
@@ -559,6 +568,8 @@ begin
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
 
@@ -587,6 +598,8 @@ begin
         s_clock_en        <= '1';
 
         s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '1';
 
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
@@ -623,7 +636,13 @@ begin
 
         s_buf_in_out_n    <= '0';
 
-        s_dram_cmd        <= CMD_NOP;
+        s_precharge_all   <= '0';
+
+        if s_delay_cnt_r = c_self_rf_delay then
+          s_dram_cmd        <= CMD_REF;
+        else
+          s_dram_cmd        <= CMD_NOP;
+        end if;
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
@@ -648,6 +667,8 @@ begin
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
 
@@ -666,14 +687,16 @@ begin
         s_error_flag        <= '0';
 
       when st_idle        =>
-        s_delay_cnt_i     <= 0;
         if s_refresh = '1' then
-          s_init_ref_cnt_i  <= c_self_rf_delay;
+          s_delay_cnt_i     <= c_self_rf_delay;
         end if;
+        s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
 
         s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
@@ -683,8 +706,14 @@ begin
         s_data_l_out_r_rst  <= '1';
         s_data_u_out_r_rst  <= '1';
 
-        s_add_in_r_en       <= '0';
-        s_data_in_r_en      <= '0';
+        if (i_read = '1' or i_write = '1') then
+          s_add_in_r_en       <= '1';
+        else
+          s_add_in_r_en       <= '0';
+        end if;
+        if i_read = '1' then
+          s_data_in_r_en      <= '0';
+        end if;
         s_data_l_out_r_en   <= '0';
         s_data_u_out_r_en   <= '0';
 
@@ -700,7 +729,9 @@ begin
 
         s_buf_in_out_n    <= '0';
 
-        s_dram_cmd        <= CMD_NOP;
+        s_precharge_all   <= '0';
+
+        s_dram_cmd        <= CMD_ACT;
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
@@ -724,6 +755,8 @@ begin
         s_clock_en        <= '1';
 
         s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
@@ -750,6 +783,8 @@ begin
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
 
@@ -775,14 +810,18 @@ begin
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         if i_read = '1' then
           s_dram_cmd        <= CMD_RD;
+          s_dram_dqm        <= DQM_OUT_EN;
         elsif i_write = '1' then
           s_dram_cmd        <= CMD_WR;
+          s_dram_dqm        <= DQM_OUT_DIS;
         else
           s_dram_cmd        <= CMD_NOP;
+          s_dram_dqm        <= DQM_OUT_DIS;
         end if;
-        s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
@@ -799,15 +838,23 @@ begin
         s_error_flag        <= '0';
 
       when st_ras1        =>
-        s_delay_cnt_i     <= 0;
+        s_delay_cnt_i     <= c_burst - 1;
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         s_dram_cmd        <= CMD_NOP;
-        s_dram_dqm        <= DQM_OUT_DIS;
+        if i_read = '1' then
+          s_dram_dqm        <= DQM_OUT_EN;
+        elsif i_write = '1' then
+          s_dram_dqm        <= DQM_OUT_DIS;
+        else
+          s_dram_dqm        <= DQM_OUT_DIS;
+        end if;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
@@ -831,8 +878,16 @@ begin
 
         s_buf_in_out_n    <= '0';
 
+        s_precharge_all   <= '0';
+
         s_dram_cmd        <= CMD_NOP;
-        s_dram_dqm        <= DQM_OUT_DIS;
+        if i_read = '1' then
+          s_dram_dqm        <= DQM_OUT_EN;
+        elsif i_write = '1' then
+          s_dram_dqm        <= DQM_OUT_DIS;
+        else
+          s_dram_dqm        <= DQM_OUT_DIS;
+        end if;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
@@ -841,8 +896,13 @@ begin
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        if s_up_low_n_mux = '1' then
+          s_data_l_out_r_en   <= '0';
+          s_data_u_out_r_en   <= '1';
+        else
+          s_data_l_out_r_en   <= '1';
+          s_data_u_out_r_en   <= '0';
+        end if;
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
@@ -856,7 +916,9 @@ begin
 
         s_buf_in_out_n    <= '0';
 
-        s_dram_cmd        <= CMD_NOP;
+        s_precharge_all   <= '0';
+
+        s_dram_cmd        <= CMD_PRE;
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
@@ -870,7 +932,7 @@ begin
         s_data_u_out_r_en   <= '0';
 
         s_init_flag         <= '1';
-        s_ready_flag        <= '0';
+        s_ready_flag        <= '1';
         s_error_flag        <= '0';
 
       when others         =>
@@ -880,6 +942,8 @@ begin
         s_clock_en        <= '1';
 
         s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
