@@ -1,4 +1,6 @@
 vcom vhd/src/memory/sample_manager.vhd
 vcom vhd/src/memory/rec_memory.vhd
 vcom vhd/src/memory/sample_memory.vhd
+vcom vhd/src/memory/sine_samples.vhd
+vcom vhd/src/memory/square_samples.vhd
 vcom vhd/tb/tb_playback_queue.vhd

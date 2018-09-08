@@ -175,7 +175,7 @@ port (
   i_vel           : in  std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
   o_sample_en     : out std_logic_vector(MAX_POLYPHONY - 1 downto 0);
-  o_sample_idx    : out t_sound_gen_out
+  o_sample_idx    : out t_sound_table
 );
 end component;
 

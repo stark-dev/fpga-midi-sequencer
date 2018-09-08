@@ -100,11 +100,10 @@ package UTILS_PKG is
   type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 
   -- sound generator
-  type t_sound_table    is array (2**SEQ_NOTE_SIZE - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
-  type t_sound_gen_out  is array (MAX_POLYPHONY - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
+  type t_sound_table    is array (MAX_POLYPHONY - 1 downto 0) of std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
 
   type t_sample_enable  is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(MAX_POLYPHONY - 1 downto 0);
-  type t_sample_idx     is array (SEQ_TRACKS - 1 downto 0) of t_sound_gen_out;
+  type t_sample_idx     is array (SEQ_TRACKS - 1 downto 0) of t_sound_table;
 
   -- sample memory
   type t_sample_memory  is array (2**SMP_MEM_SIZE - 1 downto 0) of std_logic_vector(SAMPLE_WIDTH - 1 downto 0);

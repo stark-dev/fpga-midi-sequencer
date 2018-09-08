@@ -22,7 +22,7 @@ architecture BHV of MIDI_EVT_FILTER is
 --------------------------------------------------------------------------------
 -- types
 --------------------------------------------------------------------------------
-  type t_midi_fsm is (st_reset, st_ready, st_status, st_wait1, st_data1, st_wait2, st_data2, st_end);
+  type t_midi_fsm is (st_reset, st_idle, st_status, st_wait1, st_data1, st_wait2, st_data2, st_end, st_ready);
 
 --------------------------------------------------------------------------------
 -- constants
@@ -69,6 +69,10 @@ architecture BHV of MIDI_EVT_FILTER is
   signal s_cmd_ch_e     : std_logic;
   signal s_cmd_data1_e  : std_logic;
   signal s_cmd_data2_e  : std_logic;
+
+  -- output command latch
+  signal s_out_latch    : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
+  signal s_out_latch_en : std_logic;
 
 --------------------------------------------------------------------------------
 -- components
@@ -175,9 +179,19 @@ begin
     o_par_out     => s_cmd_out(SEQ_DATA2_RANGE)
   );
 
+  CMD_REG : REGISTER_N
+  generic map (SEQ_EVENT_SIZE)
+  port map(
+    i_clk         => i_clk,
+    i_reset_n     => i_reset_n,
+    i_load_en     => s_out_latch_en,
+    i_par_in      => s_cmd_out,
+    o_par_out     => s_out_latch
+  );
+
   s_cmd_out(SEQ_RSVD_RANGE) <= (others => '0');
 
-  o_midi_msg      <= s_cmd_out;
+  o_midi_msg      <= s_out_latch;
   o_midi_ready    <= s_cmd_ready;
 
 
@@ -187,7 +201,7 @@ begin
 
   s_rst_flag      <= i_reset_n and not(s_sample);
 
-  s_midi_cmd_en   <= '1' when s_msg_state = st_ready and s_sample = '1' else '0';
+  s_midi_cmd_en   <= '1' when s_msg_state = st_idle and s_sample = '1' else '0';
 
   p_sample_data: process(i_reset_n, i_clk)
   begin
@@ -209,12 +223,12 @@ begin
     elsif i_clk'event and i_clk = '1' then
       case s_msg_state is
         when st_reset   =>
-          s_msg_state <= st_ready;
-        when st_ready   =>
+          s_msg_state <= st_idle;
+        when st_idle    =>
           if (s_sample = '1') and (s_midi_cmd_in /= midi_unknown) then
             s_msg_state <= st_status;
           else
-            s_msg_state <= st_ready;
+            s_msg_state <= st_idle;
           end if;
         when st_status  =>
           case s_midi_cmd_r is
@@ -227,7 +241,7 @@ begin
             when midi_prg_ch    =>
               s_msg_state <= st_wait1;
             when others         =>
-              s_msg_state <= st_ready;
+              s_msg_state <= st_idle;
           end case;
         when st_wait1   =>
           if s_sample = '1' then
@@ -246,7 +260,7 @@ begin
             when midi_prg_ch    =>
               s_msg_state <= st_end;
             when others         =>
-              s_msg_state <= st_ready;
+              s_msg_state <= st_idle;
           end case;
         when st_wait2   =>
           if s_sample = '1' then
@@ -258,8 +272,10 @@ begin
           s_msg_state <= st_end;
         when st_end     =>
           s_msg_state <= st_ready;
+        when st_ready   =>
+          s_msg_state <= st_idle;
         when others     =>
-          s_msg_state <= st_ready;
+          s_msg_state <= st_idle;
       end case;
     end if;
   end process;
@@ -275,15 +291,19 @@ begin
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
 
+        s_out_latch_en  <= '0';
+
         s_cmd_ready     <= '0';
 
-      when st_ready   =>
+      when st_idle    =>
         s_midi_cmd_rst  <= '1';
 
         s_cmd_type_e    <= '0';
         s_cmd_ch_e      <= '0';
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
+
+        s_out_latch_en  <= '0';
 
         s_cmd_ready     <= '0';
 
@@ -295,6 +315,8 @@ begin
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
 
+        s_out_latch_en  <= '0';
+
         s_cmd_ready     <= '0';
 
       when st_wait1   =>
@@ -304,6 +326,8 @@ begin
         s_cmd_ch_e      <= '0';
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
+
+        s_out_latch_en  <= '0';
 
         s_cmd_ready     <= '0';
 
@@ -315,6 +339,8 @@ begin
         s_cmd_data1_e   <= '1';
         s_cmd_data2_e   <= '0';
 
+        s_out_latch_en  <= '0';
+
         s_cmd_ready     <= '0';
 
       when st_wait2   =>
@@ -324,6 +350,8 @@ begin
         s_cmd_ch_e      <= '0';
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
+
+        s_out_latch_en  <= '0';
 
         s_cmd_ready     <= '0';
 
@@ -335,6 +363,8 @@ begin
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '1';
 
+        s_out_latch_en  <= '0';
+
         s_cmd_ready     <= '0';
 
       when st_end     =>
@@ -345,6 +375,20 @@ begin
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
 
+        s_out_latch_en  <= '1';
+
+        s_cmd_ready     <= '0';
+
+      when st_ready     =>
+        s_midi_cmd_rst  <= '0';
+
+        s_cmd_type_e    <= '0';
+        s_cmd_ch_e      <= '0';
+        s_cmd_data1_e   <= '0';
+        s_cmd_data2_e   <= '0';
+
+        s_out_latch_en  <= '0';
+
         s_cmd_ready     <= '1';
 
       when others     =>
@@ -354,6 +398,8 @@ begin
         s_cmd_ch_e      <= '0';
         s_cmd_data1_e   <= '0';
         s_cmd_data2_e   <= '0';
+
+        s_out_latch_en  <= '0';
 
         s_cmd_ready     <= '0';
 
