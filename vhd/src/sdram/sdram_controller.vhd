@@ -61,9 +61,10 @@ port (
   i_clk           : in    std_logic;                        -- controller input clock
   i_reset_n       : in    std_logic;                        -- controller reset
   i_address       : in    std_logic_vector(24 downto 0);    -- input address (from device)
-  i_data          : in    std_logic_vector(31 downto 0);    -- input data    (from device)
+  i_data          : in    std_logic_vector(15 downto 0);    -- input data    (from device)
   i_read          : in    std_logic;                        -- read request  (from device)
   i_write         : in    std_logic;                        -- write request (from device)
+  i_refresh       : in    std_logic;                        -- refresh request (from device)
 
   o_clk_en        : out   std_logic;                        -- clock enable
   o_cs_n          : out   std_logic;                        -- chip select (active low)
@@ -73,11 +74,11 @@ port (
   o_dram_addr     : out   std_logic_vector(12 downto 0);    -- address
   io_dram_dq      : inout std_logic_vector(15 downto 0);    -- data in/out
   o_dram_ba       : out   std_logic_vector(1 downto 0);     -- bank select
-  o_dram_ldqm     : out   std_logic;                        -- lower data mask byte
-  o_dram_udqm     : out   std_logic;                        -- upper data mask byte
+  o_dram_ldqm     : out   std_logic;                        -- lower byte data mask
+  o_dram_udqm     : out   std_logic;                        -- upper byte data mask
 
   o_init          : out   std_logic;                        -- inif flag (signals that memory is ready)
-  o_data          : out   std_logic_vector(31 downto 0);    -- output data (to device)
+  o_data          : out   std_logic_vector(15 downto 0);    -- output data (to device)
   o_ready         : out   std_logic;                        -- mem ready   (to device)
   o_error         : out   std_logic                         -- mem error   (to device)
 );
@@ -150,14 +151,8 @@ architecture BHV of SDRAM_CONTROLLER is
     st_rw,
     st_ras1,
     st_ras2,
-    st_pre
-  );
-
-  type t_dram_state is (
-    st_rst,
-    st_wait100, -- wait 100 us at power up
-    st_init
-
+    st_pre,
+    st_done
   );
 
   type t_dram_cmd is (
@@ -184,7 +179,7 @@ architecture BHV of SDRAM_CONTROLLER is
 -- constants
 --------------------------------------------------------------------------------
   -- auto precharge
-  constant c_autopre                : boolean := true;
+  constant c_autopre                : boolean := false;
   -- burst length
   constant c_burst_1                : std_logic_vector(2 downto 0) := "000";
   constant c_burst_2                : std_logic_vector(2 downto 0) := "001";
@@ -204,8 +199,10 @@ architecture BHV of SDRAM_CONTROLLER is
   constant c_wr_burst_single        : std_logic := '1';
 
   -- init delay wait counter
-  -- constant c_100_us_delay           : integer := 1000; -- wait 100 us
-  constant c_100_us_delay           : integer := 10; -- TODO only for test
+  -- constant c_200_us_delay           : integer := 20000; -- wait 200 us
+  constant c_200_us_delay           : integer := 10; -- TODO only for test
+  -- active refresh delay
+  constant c_auto_rf_delay          : integer := 6;    -- auto refesh to next active (55 ns)
   -- self refresh delay
   constant c_self_rf_delay          : integer := 6;    -- self refesh delay (60 ns)
   -- init refresh cycles
@@ -244,14 +241,9 @@ architecture BHV of SDRAM_CONTROLLER is
   signal s_autoprecharge    : std_logic;
   signal s_precharge_all    : std_logic;
 
-  signal s_up_low_n_mux     : std_logic;                     -- select upper or lower data register (1 -> upper, 0 -> lower)
-  signal s_data_upper       : std_logic_vector(31 downto 16);
-  signal s_data_lower       : std_logic_vector(15 downto 0);
-
   -- tri-state dram in/out control
   signal s_buf_in_out_n     : std_logic;                     -- 1 -> write, 0 -> read
   signal s_dram_buf_in      : std_logic_vector(15 downto 0); -- write to mem
-  signal s_dram_buf_out     : std_logic_vector(15 downto 0); -- read from mem
 
   -- input address register
   signal s_add_in_r         : std_logic_vector(24 downto 0);
@@ -260,21 +252,16 @@ architecture BHV of SDRAM_CONTROLLER is
   signal s_add_in_r_rst     : std_logic;
 
   -- input data register
-  signal s_data_in_r        : std_logic_vector(31 downto 0);
-  signal s_data_in_r_in     : std_logic_vector(31 downto 0);
+  signal s_data_in_r        : std_logic_vector(15 downto 0);
+  signal s_data_in_r_in     : std_logic_vector(15 downto 0);
   signal s_data_in_r_en     : std_logic;
   signal s_data_in_r_rst    : std_logic;
 
-  -- output data registers (up and low)
-  signal s_data_l_out_r     : std_logic_vector(15 downto 0);
-  signal s_data_l_out_r_in  : std_logic_vector(15 downto 0);
-  signal s_data_l_out_r_en  : std_logic;
-  signal s_data_l_out_r_rst : std_logic;
-
-  signal s_data_u_out_r     : std_logic_vector(15 downto 0);
-  signal s_data_u_out_r_in  : std_logic_vector(15 downto 0);
-  signal s_data_u_out_r_en  : std_logic;
-  signal s_data_u_out_r_rst : std_logic;
+  -- output data register
+  signal s_data_out_r       : std_logic_vector(15 downto 0);
+  signal s_data_out_r_in    : std_logic_vector(15 downto 0);
+  signal s_data_out_r_en    : std_logic;
+  signal s_data_out_r_rst   : std_logic;
 
   -- mrs signal
   signal s_mrs_value        : std_logic_vector(14 downto 0);
@@ -283,8 +270,8 @@ architecture BHV of SDRAM_CONTROLLER is
   signal s_clock_en         : std_logic;
 
   -- delay counter
-  signal s_delay_cnt_i      : natural range 0 to c_100_us_delay;
-  signal s_delay_cnt_r      : natural range 0 to c_100_us_delay;
+  signal s_delay_cnt_i      : natural range 0 to c_200_us_delay;
+  signal s_delay_cnt_r      : natural range 0 to c_200_us_delay;
 
   -- initial refresh counter
   signal s_init_ref_cnt_i   : natural range 0 to c_init_ref_cyles;
@@ -321,6 +308,7 @@ begin
   o_we_n_d      <= s_dram_cmd_val(0);
 
   o_dram_addr_d <= s_row_address                          when s_dram_fsm = st_activate else
+                   "00" & s_precharge_all & "0000000000"  when s_dram_fsm = st_init_pre else
                    "00" & s_autoprecharge & s_col_address when s_dram_fsm = st_rw else
                    "00" & s_precharge_all & s_col_address when s_dram_fsm = st_pre else
                    s_mrs_value(12 downto 0)               when s_dram_fsm = st_init_mode else
@@ -329,6 +317,7 @@ begin
   io_dram_dq_d  <= s_dram_buf_in when s_buf_in_out_n = '1' else (others => 'Z');
 
   o_dram_ba_d   <= s_mrs_value(14 downto 13)  when s_dram_fsm = st_init_mode else
+                   "11"                       when s_dram_fsm = st_init_pre else
                    s_bank_select              when s_dram_fsm = st_activate else
                    s_bank_select              when s_dram_fsm = st_rw else
                    s_bank_select              when s_dram_fsm = st_pre else
@@ -338,25 +327,18 @@ begin
   o_dram_ldqm_d <= s_dram_dqm_val(0);
 
   o_init        <= s_init_flag;
-  o_data        <= s_data_u_out_r & s_data_l_out_r;
+  o_data        <= s_data_out_r;
   o_ready       <= s_ready_flag;
   o_error       <= s_error_flag;
 
   -- internal signal assignment
-  s_refresh     <= '0'; -- TODO fix
+  s_refresh                           <= i_refresh;
 
-  s_dram_buf_in <= s_data_in_r(15 downto 0) when s_up_low_n_mux = '0' else
-                   s_data_in_r(31 downto 16);
-
-  s_up_low_n_mux  <= '0'; -- TODO fix (select upper or lower half word)
-
-  s_dram_buf_out                      <= io_dram_dq; -- TODO fix (set to io_dram_dq only when read)
+  s_dram_buf_in                       <= s_data_in_r;
+  s_data_out_r_in                     <= io_dram_dq when s_buf_in_out_n = '0' else (others => '0'); -- TODO fix (set to io_dram_dq only when read)
 
   s_add_in_r_in                       <= i_address;
   s_data_in_r_in                      <= i_data;
-
-  s_data_l_out_r_in                   <= s_dram_buf_out;
-  s_data_u_out_r_in                   <= s_dram_buf_out;
 
   s_mrs_value(MRS_RESERVED_RANGE)     <= (others => '0');
   s_mrs_value(MRS_WR_BURST_MODE)      <= c_wr_burst_single;
@@ -369,9 +351,6 @@ begin
   s_row_address   <= s_add_in_r(22 downto 10);
   s_col_address   <= s_add_in_r(9 downto 0);
   s_autoprecharge <= '1' when c_autopre = true else '0';
-
-  s_data_upper    <= s_data_in_r(31 downto 16);
-  s_data_lower    <= s_data_in_r(15 downto 0);
 
   -- components
   ADD_IN_R : REGISTER_N
@@ -386,7 +365,7 @@ begin
 
   -- holds data from external input (write to memory)
   DATA_IN_R : REGISTER_N
-  generic map (32)
+  generic map (16)
   port map(
     i_clk         => i_clk,
     i_reset_n     => s_data_in_r_rst,
@@ -395,25 +374,15 @@ begin
     o_par_out     => s_data_in_r
   );
 
-  -- hold data from memory (to external output)
-  DATA_OUT_LOW_R : REGISTER_N
+  -- holds data from memory (to external output)
+  DATA_OUT_R : REGISTER_N
   generic map (16)
   port map(
     i_clk         => i_clk,
-    i_reset_n     => s_data_l_out_r_rst,
-    i_load_en     => s_data_l_out_r_en,
-    i_par_in      => s_data_l_out_r_in,
-    o_par_out     => s_data_l_out_r
-  );
-
-  DATA_OUT_UP_R : REGISTER_N
-  generic map (16)
-  port map(
-    i_clk         => i_clk,
-    i_reset_n     => s_data_u_out_r_rst,
-    i_load_en     => s_data_u_out_r_en,
-    i_par_in      => s_data_u_out_r_in,
-    o_par_out     => s_data_u_out_r
+    i_reset_n     => s_data_out_r_rst,
+    i_load_en     => s_data_out_r_en,
+    i_par_in      => s_data_out_r_in,
+    o_par_out     => s_data_out_r
   );
 
   -- processes
@@ -484,7 +453,7 @@ begin
 
         when st_ref         =>
           if s_delay_cnt_r = 0 then  -- refresh delay
-            s_dram_fsm <= st_idle;
+            s_dram_fsm <= st_done;
           else
             s_dram_fsm <= st_ref;
           end if;
@@ -497,7 +466,7 @@ begin
           end if;
 
         when st_rw          =>
-          s_dram_fsm <= st_ras1;
+          s_dram_fsm <= st_ras2;
 
         when st_ras1        =>
           s_dram_fsm <= st_ras2;
@@ -514,10 +483,13 @@ begin
           end if;
 
         when st_pre         =>
-          if s_delay_cnt_r = 0 then  -- trcd delay
+          s_dram_fsm <= st_done;
+
+        when st_done        =>
+          if s_delay_cnt_r = 0 then  -- trcd  -1 delay
             s_dram_fsm <= st_idle;
           else
-            s_dram_fsm <= st_pre;
+            s_dram_fsm <= st_done;
           end if;
 
         when others         =>
@@ -526,11 +498,11 @@ begin
     end if;
   end process;
 
-  p_dram_fsm_ctrl: process(s_dram_fsm, s_delay_cnt_r, s_init_ref_cnt_r, i_read, i_write, s_refresh, s_up_low_n_mux)
+  p_dram_fsm_ctrl: process(s_dram_fsm, s_delay_cnt_r, s_init_ref_cnt_r, i_read, i_write, s_refresh)
   begin
     case s_dram_fsm is
       when st_rst         =>
-        s_delay_cnt_i     <= c_100_us_delay;
+        s_delay_cnt_i     <= c_200_us_delay;
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '0';
@@ -544,13 +516,11 @@ begin
 
         s_add_in_r_rst      <= '0';
         s_data_in_r_rst     <= '0';
-        s_data_l_out_r_rst  <= '0';
-        s_data_u_out_r_rst  <= '0';
+        s_data_out_r_rst    <= '0';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '0';
         s_ready_flag        <= '0';
@@ -575,13 +545,11 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '0';
         s_ready_flag        <= '0';
@@ -591,7 +559,7 @@ begin
         if s_delay_cnt_r /= 0 then
           s_delay_cnt_i     <= s_delay_cnt_r - 1;
         else
-          s_delay_cnt_i   <= c_self_rf_delay;
+          s_delay_cnt_i   <= c_auto_rf_delay;
         end if;
         s_init_ref_cnt_i  <= c_init_ref_cyles;
 
@@ -601,18 +569,16 @@ begin
 
         s_precharge_all   <= '1';
 
-        s_dram_cmd        <= CMD_NOP;
+        s_dram_cmd        <= CMD_PRE;
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '0';
         s_ready_flag        <= '0';
@@ -623,7 +589,7 @@ begin
           s_delay_cnt_i     <= s_delay_cnt_r - 1;
         else
           if s_init_ref_cnt_r /= 0 then
-            s_delay_cnt_i   <= c_self_rf_delay;
+            s_delay_cnt_i   <= c_auto_rf_delay;
           else
             s_delay_cnt_i   <= c_mrd_cycles;
           end if;
@@ -638,7 +604,7 @@ begin
 
         s_precharge_all   <= '0';
 
-        if s_delay_cnt_r = c_self_rf_delay then
+        if s_delay_cnt_r = c_auto_rf_delay then
           s_dram_cmd        <= CMD_REF;
         else
           s_dram_cmd        <= CMD_NOP;
@@ -647,13 +613,11 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '0';
         s_ready_flag        <= '0';
@@ -674,13 +638,11 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '0';
         s_ready_flag        <= '0';
@@ -688,7 +650,7 @@ begin
 
       when st_idle        =>
         if s_refresh = '1' then
-          s_delay_cnt_i     <= c_self_rf_delay;
+          s_delay_cnt_i     <= c_auto_rf_delay;
         end if;
         s_init_ref_cnt_i  <= 0;
 
@@ -703,19 +665,16 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         if (i_read = '1' or i_write = '1') then
           s_add_in_r_en       <= '1';
+          s_data_in_r_en      <= '1';
         else
           s_add_in_r_en       <= '0';
-        end if;
-        if i_read = '1' then
           s_data_in_r_en      <= '0';
         end if;
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
@@ -736,20 +695,22 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
         s_error_flag        <= '0';
 
       when st_ref         =>
-        s_delay_cnt_i     <= 0;
+        if s_delay_cnt_r /= 0 then
+          s_delay_cnt_i <= s_delay_cnt_r - 1;
+        else
+          s_delay_cnt_i     <= c_trp_cycles - 1;
+        end if;
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
@@ -758,18 +719,21 @@ begin
 
         s_precharge_all   <= '0';
 
-        s_dram_cmd        <= CMD_NOP;
+        if s_delay_cnt_r = c_auto_rf_delay then
+          s_dram_cmd        <= CMD_REF;
+        else
+          s_dram_cmd        <= CMD_NOP;
+        end if;
+
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
@@ -790,13 +754,11 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
@@ -808,7 +770,11 @@ begin
 
         s_clock_en        <= '1';
 
-        s_buf_in_out_n    <= '0';
+        if i_write = '1' then
+          s_buf_in_out_n    <= '1';
+        else
+          s_buf_in_out_n    <= '0';
+        end if;
 
         s_precharge_all   <= '0';
 
@@ -817,7 +783,7 @@ begin
           s_dram_dqm        <= DQM_OUT_EN;
         elsif i_write = '1' then
           s_dram_cmd        <= CMD_WR;
-          s_dram_dqm        <= DQM_OUT_DIS;
+          s_dram_dqm        <= DQM_OUT_EN;
         else
           s_dram_cmd        <= CMD_NOP;
           s_dram_dqm        <= DQM_OUT_DIS;
@@ -825,20 +791,18 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
         s_error_flag        <= '0';
 
       when st_ras1        =>
-        s_delay_cnt_i     <= c_burst - 1;
+        s_delay_cnt_i     <= 0;
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
@@ -848,30 +812,22 @@ begin
         s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
-        if i_read = '1' then
-          s_dram_dqm        <= DQM_OUT_EN;
-        elsif i_write = '1' then
-          s_dram_dqm        <= DQM_OUT_DIS;
-        else
-          s_dram_dqm        <= DQM_OUT_DIS;
-        end if;
+        s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
         s_error_flag        <= '0';
 
       when st_ras2        =>
-        s_delay_cnt_i     <= c_trp_cycles;
+        s_delay_cnt_i     <= 0;
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
@@ -881,35 +837,22 @@ begin
         s_precharge_all   <= '0';
 
         s_dram_cmd        <= CMD_NOP;
-        if i_read = '1' then
-          s_dram_dqm        <= DQM_OUT_EN;
-        elsif i_write = '1' then
-          s_dram_dqm        <= DQM_OUT_DIS;
-        else
-          s_dram_dqm        <= DQM_OUT_DIS;
-        end if;
+        s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        if s_up_low_n_mux = '1' then
-          s_data_l_out_r_en   <= '0';
-          s_data_u_out_r_en   <= '1';
-        else
-          s_data_l_out_r_en   <= '1';
-          s_data_u_out_r_en   <= '0';
-        end if;
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
         s_error_flag        <= '0';
 
       when st_pre         =>
-        s_delay_cnt_i     <= 0;
+        s_delay_cnt_i     <= c_trp_cycles - 1;  -- one cycle lost due to done state
         s_init_ref_cnt_i  <= 0;
 
         s_clock_en        <= '1';
@@ -923,13 +866,36 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '1';
+
+        s_init_flag         <= '1';
+        s_ready_flag        <= '0';
+        s_error_flag        <= '0';
+
+      when st_done        =>
+        s_delay_cnt_i     <= 0;
+        s_init_ref_cnt_i  <= 0;
+
+        s_clock_en        <= '1';
+
+        s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
+
+        s_dram_cmd        <= CMD_NOP;
+        s_dram_dqm        <= DQM_OUT_DIS;
+
+        s_add_in_r_rst      <= '1';
+        s_data_in_r_rst     <= '1';
+        s_data_out_r_rst    <= '1';
+
+        s_add_in_r_en       <= '0';
+        s_data_in_r_en      <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '1';
@@ -950,13 +916,11 @@ begin
 
         s_add_in_r_rst      <= '1';
         s_data_in_r_rst     <= '1';
-        s_data_l_out_r_rst  <= '1';
-        s_data_u_out_r_rst  <= '1';
+        s_data_out_r_rst    <= '1';
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_l_out_r_en   <= '0';
-        s_data_u_out_r_en   <= '0';
+        s_data_out_r_en     <= '0';
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
