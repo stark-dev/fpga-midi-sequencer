@@ -15,9 +15,10 @@ port (
   i_clk           : in    std_logic;                        -- controller input clock
   i_reset_n       : in    std_logic;                        -- controller reset
   i_address       : in    std_logic_vector(24 downto 0);    -- input address (from device)
-  i_data          : in    std_logic_vector(31 downto 0);    -- input data    (from device)
+  i_data          : in    std_logic_vector(15 downto 0);    -- input data    (from device)
   i_read          : in    std_logic;                        -- read request  (from device)
   i_write         : in    std_logic;                        -- write request (from device)
+  i_refresh       : in    std_logic;                        -- refresh request (from device)
 
   o_clk_en        : out   std_logic;                        -- clock enable
   o_cs_n          : out   std_logic;                        -- chip select (active low)
@@ -31,7 +32,7 @@ port (
   o_dram_udqm     : out   std_logic;                        -- upper data mask byte
 
   o_init          : out   std_logic;                        -- inif flag (signals that memory is ready)
-  o_data          : out   std_logic_vector(31 downto 0);    -- output data (to device)
+  o_data          : out   std_logic_vector(15 downto 0);    -- output data (to device)
   o_ready         : out   std_logic;                        -- mem ready   (to device)
   o_error         : out   std_logic                         -- mem error   (to device)
 );
@@ -47,7 +48,7 @@ end component;
   signal s_rst            : std_logic;
 
   signal s_address       : std_logic_vector(24 downto 0);
-  signal s_i_data        : std_logic_vector(31 downto 0);
+  signal s_i_data        : std_logic_vector(15 downto 0);
   signal s_read          : std_logic;
   signal s_write         : std_logic;
 
@@ -63,9 +64,10 @@ end component;
   signal s_dram_udqm     : std_logic;
 
   signal s_init          : std_logic;
-  signal s_o_data        : std_logic_vector(31 downto 0);
+  signal s_o_data        : std_logic_vector(15 downto 0);
   signal s_ready         : std_logic;
   signal s_error         : std_logic;
+  signal s_refresh       : std_logic;
 
 
 begin
@@ -78,6 +80,7 @@ port map (
   i_data          => s_i_data,
   i_read          => s_read,
   i_write         => s_write,
+  i_refresh       => s_refresh,
 
   o_clk_en        => s_clk_en,
   o_cs_n          => s_cs_n,
@@ -110,48 +113,70 @@ port map (
     -- reset
     s_rst         <= '0';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
     s_write       <= '0';
+    s_refresh     <= '0';
     wait for 10 ns;
 
     -- wait init
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
     s_write       <= '0';
+    s_refresh     <= '0';
     wait for 800 ns;
 
     -- read
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(104, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '1';
     s_write       <= '0';
+    s_refresh     <= '0';
     wait for 50 ns;
 
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
     s_write       <= '0';
+    s_refresh     <= '0';
     wait for 10 ns;
 
     -- write
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(212, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(120, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(120, 16));
     s_read        <= '0';
     s_write       <= '1';
+    s_refresh     <= '0';
     wait for 50 ns;
 
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
-    s_i_data      <= std_logic_vector(to_unsigned(255, 32));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
     s_write       <= '0';
-    wait for 10 ns;
+    s_refresh     <= '0';
+    wait for 100 ns;
+
+    -- write
+    s_rst         <= '1';
+    s_address     <= std_logic_vector(to_unsigned(212, 25));
+    s_i_data      <= std_logic_vector(to_unsigned(120, 16));
+    s_read        <= '0';
+    s_write       <= '0';
+    s_refresh     <= '1';
+    wait for 50 ns;
+
+    s_rst         <= '1';
+    s_address     <= std_logic_vector(to_unsigned(0, 25));
+    s_i_data      <= std_logic_vector(to_unsigned(255, 16));
+    s_read        <= '0';
+    s_write       <= '0';
+    s_refresh     <= '0';
 
     wait;
   end process;
