@@ -142,6 +142,7 @@ architecture BHV of SDRAM_CONTROLLER is
     st_rst,
     st_init_wait,
     st_init_pre,
+    st_init_pre_wait,
     st_init_ref,
     st_init_mode,
     st_idle,
@@ -420,9 +421,16 @@ begin
 
         when st_init_pre    =>
           if s_delay_cnt_r = 0 then -- pre to active delay
-            s_dram_fsm <= st_init_ref;
+            s_dram_fsm <= st_init_pre_wait;
           else
             s_dram_fsm <= st_init_pre;
+          end if;
+
+        when st_init_pre_wait =>
+          if s_delay_cnt_r = 0 then -- pre to active delay
+            s_dram_fsm <= st_init_ref;
+          else
+            s_dram_fsm <= st_init_pre_wait;
           end if;
 
         when st_init_ref    =>
@@ -530,7 +538,7 @@ begin
         if s_delay_cnt_r /= 0 then
           s_delay_cnt_i     <= s_delay_cnt_r - 1;
         else
-          s_delay_cnt_i   <= c_trp_cycles;
+          s_delay_cnt_i   <= 0;
         end if;
         s_init_ref_cnt_i  <= 0;
 
@@ -559,6 +567,35 @@ begin
         if s_delay_cnt_r /= 0 then
           s_delay_cnt_i     <= s_delay_cnt_r - 1;
         else
+          s_delay_cnt_i   <= c_trp_cycles - 1;
+        end if;
+        s_init_ref_cnt_i  <= 0;
+
+        s_clock_en        <= '1';
+
+        s_buf_in_out_n    <= '0';
+
+        s_precharge_all   <= '0';
+
+        s_dram_cmd        <= CMD_PRE;
+        s_dram_dqm        <= DQM_OUT_DIS;
+
+        s_add_in_r_rst      <= '1';
+        s_data_in_r_rst     <= '1';
+        s_data_out_r_rst    <= '1';
+
+        s_add_in_r_en       <= '0';
+        s_data_in_r_en      <= '0';
+        s_data_out_r_en     <= '0';
+
+        s_init_flag         <= '0';
+        s_ready_flag        <= '0';
+        s_error_flag        <= '0';
+
+      when st_init_pre_wait    =>
+        if s_delay_cnt_r /= 0 then
+          s_delay_cnt_i     <= s_delay_cnt_r - 1;
+        else
           s_delay_cnt_i   <= c_auto_rf_delay;
         end if;
         s_init_ref_cnt_i  <= c_init_ref_cyles;
@@ -569,7 +606,7 @@ begin
 
         s_precharge_all   <= '1';
 
-        s_dram_cmd        <= CMD_PRE;
+        s_dram_cmd        <= CMD_NOP;
         s_dram_dqm        <= DQM_OUT_DIS;
 
         s_add_in_r_rst      <= '1';
