@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 
 use work.UTILS_PKG.all;
 
-entity SAMPLE_MEMORY is
+entity SAMPLE_MANAGER is
 	generic (
 		g_sample_width 	: integer := 8;
 		g_patch_width		: integer := 7;
@@ -22,7 +22,7 @@ entity SAMPLE_MEMORY is
 	);
 end entity;
 
-architecture BHV of SAMPLE_MEMORY is
+architecture BHV of SAMPLE_MANAGER is
 
 	component sample_rom is
 		port

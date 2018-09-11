@@ -221,7 +221,7 @@ port (
 );
 end component;
 
-component SAMPLE_MEMORY is
+component SAMPLE_MANAGER is
 	generic (
 		g_sample_width 	: integer := 8;
 		g_patch_width		: integer := 7;
@@ -485,7 +485,7 @@ begin
     );
   end generate;
 
-  SAMPLE_MEM : SAMPLE_MEMORY
+  SAMPLE_MEM : SAMPLE_MANAGER
 	generic map (
 		g_sample_width 	=> SAMPLE_WIDTH,
 		g_patch_width		=> TR_PATCH_SIZE,
