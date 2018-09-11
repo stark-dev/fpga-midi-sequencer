@@ -107,7 +107,7 @@ architecture TEST of TB_CORE is
     );
   end component;
 
-  component SAMPLE_MANAGER is
+  component EVENT_MANAGER is
   port (
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
@@ -359,7 +359,7 @@ begin
     o_uart_err    => s_uart_rx_err
   );
 
-  SAMPLE_MNG : SAMPLE_MANAGER
+  SAMPLE_MNG : EVENT_MANAGER
   port map (
     i_clk           => s_clk,
     i_reset_n       => s_data_reload,
