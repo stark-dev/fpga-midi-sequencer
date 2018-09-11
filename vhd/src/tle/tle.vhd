@@ -310,9 +310,13 @@ end component;
   signal s_pb_q_ready   : std_logic;
 
   -- playback queue and memory
-  signal s_data_reload    : std_logic;
-  signal s_mem_error      : std_logic;
   signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  signal s_data_reload    : std_logic;
+  signal s_mem_ready      : std_logic;
+  signal s_mem_read_en    : std_logic;
+  signal s_mem_write_en   : std_logic;
+  signal s_mem_error      : std_logic;
+  signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
   signal s_mem_wr_mux     : t_mem_wr_mux;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
@@ -324,8 +328,21 @@ end component;
   signal s_sample_mem_add : std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
   signal s_sample_mem_out : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
 
+  -- sample out
+  signal s_dac_out        : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+
 begin
+
+  s_mem_data      <= i_mem_data;
+  s_mem_ready     <= i_mem_ready;
+  s_mem_error     <= i_mem_error;
+  o_mem_read_en   <= s_mem_read_en;
+  o_mem_write_en  <= s_mem_write_en;
+  o_address       <= s_mem_address;
   o_load_data     <= s_mem_wr_mux_in;
+
+  o_dac_out       <= s_dac_out;
+
   o_clip          <= s_clip;
 
   s_data_reload   <= i_reset_n and not(s_restart);
@@ -405,14 +422,14 @@ begin
 
     i_midi_ready    => s_midi_ready,
 
-    i_data_ready    => i_mem_ready,
-    i_mem_data      => i_mem_data,
+    i_data_ready    => s_mem_ready,
+    i_mem_data      => s_mem_data,
 
-    o_mem_read      => o_mem_read_en,
-    o_mem_write     => o_mem_write_en,
-    o_mem_address   => o_address,
+    o_mem_read      => s_mem_read_en,
+    o_mem_write     => s_mem_write_en,
+    o_mem_address   => s_mem_address,
     o_mem_wr_mux    => s_mem_wr_mux,
-    i_mem_error     => i_mem_error,
+    i_mem_error     => s_mem_error,
 
     o_pb_ready      => s_pb_ready,
     o_pb_end        => s_pb_end,
@@ -439,7 +456,7 @@ begin
     o_clip          => s_clip,
     o_mem_read      => s_sample_mem_rd,
     o_mem_address   => s_sample_mem_add,
-    o_sample_out    => o_dac_out
+    o_sample_out    => s_dac_out
   );
 
   SOUND_GEN_GENERATE:

@@ -48,7 +48,7 @@ package UTILS_PKG is
   constant SAMPLE_FREQ    : integer := 44100; -- sampling frequency of sound samples
   constant MAX_POLYPHONY  : integer := 7;     -- max number of notes played at the same time
   constant MAX_POLY_BIT   : integer := 3;     -- bit size of max poly counter (change accordingly)
-  constant SMP_MEM_SIZE   : integer := 12;    -- address bit width of sample memory
+  constant SMP_MEM_SIZE   : integer := 16;    -- address bit width of sample memory
 
   -- functions
   function log2 (X : positive)  return natural;                   -- Y = log2(X)

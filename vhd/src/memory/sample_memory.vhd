@@ -24,19 +24,12 @@ end entity;
 
 architecture BHV of SAMPLE_MEMORY is
 
-	component SINE_MEM is
-		port (
-			i_enable_mem		: std_logic;
-			i_addr					: in std_logic_vector(11 downto 0);
-			o_out 				 	: out std_logic_vector(7 downto 0)
-		);
-	end component;
-
-	component SQUARE_MEM is
-		port (
-			i_enable_mem		: std_logic;
-			i_addr					: in std_logic_vector(11 downto 0);
-			o_out 				 	: out std_logic_vector(7 downto 0)
+	component sample_rom is
+		port
+		(
+			address			: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			clock			  : IN STD_LOGIC  := '1';
+			q			 	    : OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
 		);
 	end component;
 
@@ -49,18 +42,11 @@ architecture BHV of SAMPLE_MEMORY is
 
 begin
 
-	SINE_SAMPLES : SINE_MEM
-	port map (
-		i_enable_mem		=> i_enable,
-		i_addr					=> i_address(SMP_IDX_RANGE),
-		o_out 				 	=> s_sine_out
-	);
-
-	SQUARE_SAMPLES : SQUARE_MEM
-	port map (
-		i_enable_mem		=> i_enable,
-		i_addr					=> i_address(SMP_IDX_RANGE),
-		o_out 				 	=> s_square_out
+	SINE_SAMPLES : sample_rom
+	port map(
+		address => i_address(SMP_IDX_RANGE),
+		clock		=> i_clk,
+		q				=> s_sine_out
 	);
 
 	o_mem_ready <= '1' when s_fsm = st_ready else '0';
