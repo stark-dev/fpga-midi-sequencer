@@ -187,12 +187,11 @@ port (
   i_sample_en     : in  t_sample_enable;  -- array of enable signals
   i_sample_idx    : in  t_sample_idx;     -- array of sample indexes
 
+  o_mem_patch     : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  o_mem_address   : out std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
   i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
 
-  i_mem_ready     : in  std_logic;
   o_clip          : out std_logic;  -- clip indicator
-  o_mem_read      : out std_logic;
-  o_mem_address   : out std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
   o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
 );
 end component;
@@ -229,11 +228,9 @@ component SAMPLE_MANAGER is
 	);
 	port (
 		i_clk					: in  std_logic;
-		i_reset_n			: in  std_logic;
 		i_enable  		: in  std_logic;
-		i_read    		: in  std_logic;
-		i_address			: in  std_logic_vector(g_patch_width + g_mem_size - 1 downto 0);
-		o_mem_ready		: out std_logic;
+		i_patch				: in	std_logic_vector(g_patch_width - 1 downto 0);
+		i_address			: in  std_logic_vector(g_mem_size - 1 downto 0);
 		o_mem_out			: out std_logic_vector(g_sample_width - 1 downto 0)
 	);
 end component;
@@ -264,6 +261,7 @@ end component;
   constant c_ext_clock    : integer := 50000000;
   -- uart constants
   constant c_baud_rate    : integer := MIDI_BAUD_RATE;
+  -- constant c_baud_rate    : integer := 115200;
   constant c_databits     : integer := 8;
   constant c_parity       : boolean := false;
   constant c_parity_odd   : boolean := false;
@@ -322,11 +320,10 @@ end component;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
   -- sample memory
-  signal s_sample_mem_ok  : std_logic;
-  signal s_sample_mem_en  : std_logic;
-  signal s_sample_mem_rd  : std_logic;
-  signal s_sample_mem_add : std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
-  signal s_sample_mem_out : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_sample_mem_en    : std_logic;
+  signal s_sample_mem_patch : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  signal s_sample_mem_add   : std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
+  signal s_sample_mem_out   : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
 
   -- sample out
   signal s_dac_out        : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
@@ -409,7 +406,7 @@ begin
     o_uart_err    => s_uart_rx_err
   );
 
-  SAMPLE_MNG : EVENT_MANAGER
+  EVT_MNG : EVENT_MANAGER
   port map (
     i_clk           => i_clk,
     i_reset_n       => s_data_reload,
@@ -450,12 +447,11 @@ begin
     i_sample_en     => s_sample_enable,
     i_sample_idx    => s_sample_index,
 
+    o_mem_patch     => s_sample_mem_patch,
+    o_mem_address   => s_sample_mem_add,
     i_mem_sample    => s_sample_mem_out,
 
-    i_mem_ready     => s_sample_mem_ok,
     o_clip          => s_clip,
-    o_mem_read      => s_sample_mem_rd,
-    o_mem_address   => s_sample_mem_add,
     o_sample_out    => s_dac_out
   );
 
@@ -485,7 +481,7 @@ begin
     );
   end generate;
 
-  SAMPLE_MEM : SAMPLE_MANAGER
+  SAMPLE_MNG : SAMPLE_MANAGER
 	generic map (
 		g_sample_width 	=> SAMPLE_WIDTH,
 		g_patch_width		=> TR_PATCH_SIZE,
@@ -493,11 +489,9 @@ begin
 	)
 	port map (
 		i_clk					=> i_clk,
-		i_reset_n			=> i_reset_n,
 		i_enable  		=> s_sample_mem_en,
-		i_read    		=> s_sample_mem_rd,
+		i_patch			  => s_sample_mem_patch,
 		i_address			=> s_sample_mem_add,
-		o_mem_ready		=> s_sample_mem_ok,
 		o_mem_out			=> s_sample_mem_out
 	);
 

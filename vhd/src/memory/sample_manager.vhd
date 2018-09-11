@@ -13,82 +13,52 @@ entity SAMPLE_MANAGER is
 	);
 	port (
 		i_clk					: in  std_logic;
-		i_reset_n			: in  std_logic;
 		i_enable  		: in  std_logic;
-		i_read    		: in  std_logic;
-		i_address			: in  std_logic_vector(g_patch_width + g_mem_size - 1 downto 0);
-		o_mem_ready		: out std_logic;
+		i_patch				: in	std_logic_vector(g_patch_width - 1 downto 0);
+		i_address			: in  std_logic_vector(g_mem_size - 1 downto 0);
 		o_mem_out			: out std_logic_vector(g_sample_width - 1 downto 0)
 	);
 end entity;
 
 architecture BHV of SAMPLE_MANAGER is
 
-	component sample_rom is
+	component sine_sample_rom
 		port
 		(
-			address			: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
-			clock			  : IN STD_LOGIC  := '1';
-			q			 	    : OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+			address		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			clock		: IN STD_LOGIC  := '1';
+			q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
 		);
 	end component;
-
-	type t_fsm is (st_reset, st_idle, st_read, st_ready);
-
-	signal s_fsm 				: t_fsm;
 
 	signal s_sine_out 	: std_logic_vector(g_sample_width - 1 downto 0);
 	signal s_square_out : std_logic_vector(g_sample_width - 1 downto 0);
 
 begin
 
-	SINE_SAMPLES : sample_rom
-	port map(
-		address => i_address(SMP_IDX_RANGE),
-		clock		=> i_clk,
-		q				=> s_sine_out
-	);
+	sine_samples: sine_sample_rom
+	port map (
+			address		=> i_address,
+			clock		  => i_clk,
+			q		      => s_sine_out
+		);
 
-	o_mem_ready <= '1' when s_fsm = st_ready else '0';
+	o_mem_out <= s_sine_out;
 
-	p_mem_fsm: process(i_clk, i_reset_n)
-	begin
-		if i_reset_n = '0' then
-			s_fsm <= st_reset;
-		elsif i_clk'event and i_clk = '1' then
-			case s_fsm is
-				when st_reset		=>
-					s_fsm <= st_idle;
-				when st_idle 		=>
-					if i_read = '1' then
-						s_fsm <= st_read;
-					else
-						s_fsm <= st_idle;
-					end if;
-				when st_read		=>
-					s_fsm <= st_ready;
-				when st_ready		=>
-					s_fsm <= st_idle;
-				when others 		=>
-					s_fsm <= st_reset;
-			end case;
-		end if;
-	end process;
-
-	p_mem_out: process(i_enable, i_address, s_sine_out, s_square_out)
-	begin
-		if i_enable = '1' then
-			case (to_integer(unsigned(i_address(BANK_SEL_RANGE)))) is
-				when 0      => -- sine mem
-					o_mem_out <= s_sine_out;
-				when 1      => --square mem
-					o_mem_out <= s_square_out;
-				when others =>
-					o_mem_out 		<= (others => '0');
-			end case;
-		else
-			o_mem_out 		<= (others => '0');
-		end if;
-	end process;
+	-- p_mem_out: process(i_enable, i_address, s_sine_out, s_square_out)
+	-- begin
+	-- 	if i_enable = '1' then
+	-- 		case (to_integer(unsigned(i_patch))) is
+	-- 			when 0      => -- sine mem
+	-- 				o_mem_out <= s_sine_out;
+	-- 			when 1      => --square mem
+	-- 				o_mem_out <= s_square_out;
+	-- 			when others =>
+	-- 				o_mem_out 		<= (others => '0');
+	-- 		end case;
+	-- 	else
+	-- 		o_mem_out 		<= (others => '0');
+	-- 	end if;
+	-- end process;
 
 end architecture;

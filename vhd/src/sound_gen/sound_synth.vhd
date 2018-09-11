@@ -17,12 +17,11 @@ port (
   i_sample_en     : in  t_sample_enable;  -- array of enable signals
   i_sample_idx    : in  t_sample_idx;     -- array of sample indexes
 
+  o_mem_patch     : out std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  o_mem_address   : out std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
   i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
 
-  i_mem_ready     : in  std_logic;
   o_clip          : out std_logic;  -- clip indicator
-  o_mem_read      : out std_logic;
-  o_mem_address   : out std_logic_vector(TR_PATCH_SIZE + SMP_MEM_SIZE - 1 downto 0);
   o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
 );
 end entity;
@@ -108,8 +107,8 @@ begin
 
   o_clip            <= '0'; -- TODO add clip logic
   o_sample_out      <= s_out_sample;
-  o_mem_address(BANK_SEL_RANGE) <= i_patch(to_integer(s_track_scan));
-  o_mem_address(SMP_IDX_RANGE)  <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
+  o_mem_patch       <= i_patch(to_integer(s_track_scan));
+  o_mem_address     <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
 
   s_sample_scan_end <= to_unsigned(MAX_POLYPHONY - 1, MAX_POLY_BIT);
 
@@ -195,11 +194,7 @@ begin
         when st_read      =>
           s_fsm_state <= st_wait;
         when st_wait      =>
-          if i_mem_ready = '1' then
-            s_fsm_state <= st_scan;
-          else
-            s_fsm_state <= st_wait;
-          end if;
+          s_fsm_state <=  st_scan;
         when st_scan      =>
           if s_sample_scan_tc = '1' and s_track_scan_tc = '1' then
             s_fsm_state <= st_idle;
@@ -212,15 +207,13 @@ begin
     end if;
   end process;
 
-  p_fsm_ctrl: process(s_fsm_state, i_mem_ready, i_sample_en, s_track_scan, s_sample_scan)
+  p_fsm_ctrl: process(s_fsm_state, i_sample_en, s_track_scan, s_sample_scan)
   begin
     case s_fsm_state is
       when st_reset     =>
         s_sample_scan_rst     <= '0';
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
-
-        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '0';
 
@@ -235,8 +228,6 @@ begin
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '0';
 
-        o_mem_read            <= '0';
-
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '1';
@@ -249,8 +240,6 @@ begin
         s_sample_scan_rst     <= '1';
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
-
-        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '1';
 
@@ -265,8 +254,6 @@ begin
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
 
-        o_mem_read            <= '0';
-
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '0';
@@ -279,8 +266,6 @@ begin
         s_sample_scan_rst     <= '1';
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
-
-        o_mem_read            <= '1';
 
         s_track_scan_rst      <= '1';
 
@@ -295,12 +280,10 @@ begin
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
 
-        o_mem_read            <= '0';
-
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '1';
-        if i_mem_ready = '1' and  i_sample_en(to_integer(s_track_scan))(to_integer(s_sample_scan)) = '1' then
+        if i_sample_en(to_integer(s_track_scan))(to_integer(s_sample_scan)) = '1' then
           s_current_sample_en   <= '1';
         else
           s_current_sample_en   <= '0';
@@ -314,8 +297,6 @@ begin
         s_sample_scan_en      <= '1';
         s_next_sample_rst     <= '1';
 
-        o_mem_read            <= '0';
-
         s_track_scan_rst      <= '1';
 
         s_current_sample_rst  <= '1';
@@ -328,8 +309,6 @@ begin
         s_sample_scan_rst     <= '0';
         s_sample_scan_en      <= '0';
         s_next_sample_rst     <= '1';
-
-        o_mem_read            <= '0';
 
         s_track_scan_rst      <= '0';
 
