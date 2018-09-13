@@ -242,6 +242,17 @@ port (
 );
 end component;
 
+component rec_memory IS
+	port
+	(
+		address		: IN STD_LOGIC_VECTOR (12 DOWNTO 0);
+		clock		: IN STD_LOGIC  := '1';
+		data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+		wren		: IN STD_LOGIC ;
+		q		: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+	);
+end component;
+
   -- common
   constant c_ext_clock    : integer := 50000000;
   -- uart constants
@@ -294,9 +305,9 @@ end component;
 
   -- playback queue and memory
   signal s_data_reload    : std_logic;
-  signal s_rec_mem_data   : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
   signal s_rec_mem_wr_en  : std_logic;
   signal s_rec_mem_add    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  signal s_rec_mem_out    : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
 
   signal s_mem_wr_mux     : t_mem_wr_mux;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
@@ -391,7 +402,7 @@ begin
 
     i_midi_ready    => s_midi_ready,
 
-    i_mem_data      => s_rec_mem_data,
+    i_mem_data      => s_rec_mem_out,
     o_mem_address   => s_rec_mem_add,
     o_mem_write     => s_rec_mem_wr_en,
     o_mem_wr_mux    => s_mem_wr_mux,
@@ -402,6 +413,15 @@ begin
 
     o_init_ready    => s_pb_q_ready
   );
+
+  REC_MEM : rec_memory
+	port (
+		address		 => s_rec_mem_add,
+		clock		   => i_clk,
+		data		   => s_mem_wr_mux_in,
+		wren		   => s_rec_mem_wr_en,
+		q		       => s_rec_mem_out
+	);
 
   SYNTH : SOUND_SYNTH
   port map (
