@@ -40,8 +40,8 @@ package UTILS_PKG is
   constant DISPLAY_SIZE   : integer := 6;
 
   -- memory constants (memory byte addressable)
-  constant MEMORY_SIZE    : integer := 26;    -- 64 MB
-  constant MEMORY_TR_SIZE : integer := 8192;  -- 8KB per track (1k sample per track)
+  constant MEMORY_SIZE    : integer := 15;    -- 32 KB
+  constant MEMORY_TR_SIZE : integer := 4096;  -- 4KB per track (512 sample per track)
 
   -- sound generator constants
   constant SAMPLE_WIDTH   : integer := 8;     -- bit width of sound samples

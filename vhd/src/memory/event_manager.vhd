@@ -58,8 +58,7 @@ architecture BHV of EVENT_MANAGER is
     );
   end component;
 
-  -- constant c_mem_track_size : integer := MEMORY_TR_SIZE;
-  constant c_mem_track_size : integer := 512; -- remove, just for test
+  constant c_mem_track_size : integer := MEMORY_TR_SIZE;
 
   constant c_memory_tr_cnt  : integer := up_int_log2(c_mem_track_size / 8); -- each sample is 4 bytes (data) + 4 bytes (ts)
 
