@@ -24,7 +24,6 @@ architecture TEST of TB_TLE is
 
       -- switches
       i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-      i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
       -- serial in
       i_midi_in       : in  std_logic;
@@ -109,7 +108,6 @@ architecture TEST of TB_TLE is
   signal s_btn4     : std_logic;
 
   signal s_tr_mute  : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_tr_solo  : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   signal s_display  : t_display_if;
 
@@ -148,7 +146,6 @@ begin
     i_btn_down      => s_btn3,
     i_btn_right     => s_btn4,
     i_tr_mute       => s_tr_mute,
-    i_tr_solo       => s_tr_solo,
     i_midi_in       => s_tx_data_out,
     o_display_a     => s_display,
     o_dac_out       => s_dac_out,
@@ -212,7 +209,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
 
     s_uart_en       <= '0';
     s_tx_load_en    <= '0';
@@ -228,7 +224,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
 
     s_uart_en       <= '0';
     s_tx_load_en    <= '0';
@@ -243,7 +238,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
 
     s_uart_en       <= '1';
     s_tx_load_en    <= '0';
@@ -332,7 +326,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '0';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 320 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -341,7 +334,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- toggle menu (patch)
@@ -351,7 +343,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '0';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -360,7 +351,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- toggle menu (track vol)
@@ -370,7 +360,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '0';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -379,7 +368,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- toggle menu (pan)
@@ -389,7 +377,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '0';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -398,7 +385,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- toggle menu (poly)
@@ -408,7 +394,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '0';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -417,7 +402,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- toggle poly
@@ -427,7 +411,6 @@ begin
     s_btn3    <= '0';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -436,7 +419,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     -- exit menu
@@ -446,7 +428,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 120 * c_clock_half_p;
 
     s_rst     <= '1';
@@ -455,7 +436,6 @@ begin
     s_btn3    <= '1';
     s_btn4    <= '1';
     s_tr_mute <= (others => '0');
-    s_tr_solo <= (others => '0');
     wait for 1000 ns;
 
     for i in 0 to 3 loop

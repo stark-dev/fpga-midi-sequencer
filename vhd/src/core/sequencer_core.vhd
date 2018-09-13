@@ -17,7 +17,6 @@ port (
   i_btn_right     : in  std_logic;
 
   i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
   -- direct midi events
   i_midi_ready    : in  std_logic;
@@ -266,7 +265,6 @@ end component;
   signal s_tr_pan_dn      : std_logic;
   signal s_tr_pan_rst     : std_logic;
   signal s_tr_mute        : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_tr_solo        : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_tr_poly_toggle : std_logic;
   signal s_tr_omni_toggle : std_logic;
   signal s_tr_status      : t_track_status;
@@ -275,7 +273,6 @@ end component;
   signal s_track_omni     : std_logic;
   signal s_track_poly     : std_logic;
   signal s_track_rec      : std_logic;
-  signal s_track_solo     : std_logic;
   signal s_track_mono     : std_logic;
   signal s_track_pan      : std_logic_vector(TR_PAN_SIZE - 1 downto 0);
   signal s_track_vol      : std_logic_vector(TR_VOL_SIZE - 1 downto 0);
@@ -310,7 +307,6 @@ begin
   -- internal signal assignment
   s_active_tr_tc_v  <= to_unsigned(SEQ_TRACKS - 1, ST_TRACK_SIZE);
   s_tr_mute         <= i_tr_mute;
-  s_tr_solo         <= i_tr_solo;
 
   -- current timestamp
   s_ts_current(ST_TS_RESERV) <= (others => '0');
@@ -357,7 +353,6 @@ begin
   s_track_omni      <= s_tr_status(to_integer(s_active_tr))(TR_OMNI_BIT);
   s_track_poly      <= s_tr_status(to_integer(s_active_tr))(TR_POLY_BIT);
   s_track_rec       <= s_tr_status(to_integer(s_active_tr))(TR_REC_BIT);
-  s_track_solo      <= s_tr_status(to_integer(s_active_tr))(TR_SOLO_BIT);
   s_track_mono      <= s_tr_status(to_integer(s_active_tr))(TR_MONO_BIT);
   s_track_pan       <= s_tr_status(to_integer(s_active_tr))(TR_PAN_RANGE);
   s_track_vol       <= s_tr_status(to_integer(s_active_tr))(TR_VOL_RANGE);
@@ -415,7 +410,7 @@ begin
         i_pan_rst       => s_tr_pan_rst,
 
         i_mute          => s_tr_mute(i),
-        i_solo          => s_tr_solo(i),
+        i_solo          => '0',   -- TODO set to proper value
 
         i_poly_toggle   => s_tr_poly_toggle,
         i_omni_toggle   => s_tr_omni_toggle,

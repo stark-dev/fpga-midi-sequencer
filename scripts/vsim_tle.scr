@@ -62,7 +62,6 @@ add wave DUT/CORE/s_tr_status
 add wave DUT/CORE/s_track_omni
 add wave DUT/CORE/s_track_poly
 add wave DUT/CORE/s_track_rec
-add wave DUT/CORE/s_track_solo
 add wave DUT/CORE/s_track_mono
 add wave DUT/CORE/s_track_pan
 add wave DUT/CORE/s_track_vol

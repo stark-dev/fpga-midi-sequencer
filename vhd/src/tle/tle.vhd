@@ -23,7 +23,6 @@ entity TLE is
 
     -- switches
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
     -- serial in
     i_midi_in       : in  std_logic;
@@ -60,7 +59,6 @@ architecture STRUCT of TLE is
     i_btn_right     : in  std_logic;
 
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    i_tr_solo       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
     -- direct midi events
     i_midi_ready    : in  std_logic;
@@ -355,7 +353,6 @@ begin
     i_btn_down      => i_btn_down,
     i_btn_right     => i_btn_right,
     i_tr_mute       => i_tr_mute,
-    i_tr_solo       => i_tr_solo,
     i_midi_ready    => s_midi_ready,
     i_midi_data     => s_midi_data,
     i_pb_ready      => s_pb_ready,
