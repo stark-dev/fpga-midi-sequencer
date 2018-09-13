@@ -9,7 +9,12 @@ output_files
 *.qsf
 *.qws
 c5_pin_model_dump.txt
+greybox_tmp
+
 
 # modelsim working dir
 work
 *.wlf
+
+# other
+*.old
