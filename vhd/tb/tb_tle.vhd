@@ -33,16 +33,7 @@ architecture TEST of TB_TLE is
 
       -- DAC
       o_dac_out       : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
-      o_clip          : out std_logic;
-
-      -- rec memory
-      i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-      i_mem_ready     : in  std_logic;
-      i_mem_error     : in  std_logic;
-      o_mem_read_en   : out std_logic;
-      o_mem_write_en  : out std_logic;
-      o_address       : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
-      o_load_data     : out std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0)
+      o_clip          : out std_logic
     );
   end component;
 
@@ -64,24 +55,6 @@ architecture TEST of TB_TLE is
       o_uart_out    : out   std_logic;
       o_uart_end    : out   std_logic
     );
-  end component;
-
-  component REC_MEMORY is
-  generic (
-    g_mem_size      : integer := 8
-  );
-  port (
-    i_clk           : in  std_logic;
-    i_reset_n       : in  std_logic;
-    i_enable        : in  std_logic;
-    i_read_en       : in  std_logic;
-    i_write_en      : in  std_logic;
-    i_address       : in  std_logic_vector(g_mem_size - 1 downto 0);
-    i_load_data     : in  std_logic_vector(31 downto 0);
-    o_data          : out std_logic_vector(31 downto 0);
-    o_mem_ready     : out std_logic;
-    o_mem_error     : out std_logic
-  );
   end component;
 
   -- common
@@ -121,20 +94,6 @@ architecture TEST of TB_TLE is
   signal s_tx_data_out  : std_logic;
   signal s_uart_tx_end  : std_logic;
 
-  -- evt memory
-  signal s_mem_enable     : std_logic;
-
-  signal s_mem_ready      : std_logic;
-  signal s_mem_data_out   : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
-  signal s_mem_data_in    : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-
-  signal s_mem_read       : std_logic;
-  signal s_mem_write      : std_logic;
-  signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
-  signal s_mem_error      : std_logic;
-
-
-
 begin
 
   DUT : TLE
@@ -149,14 +108,7 @@ begin
     i_midi_in       => s_tx_data_out,
     o_display_a     => s_display,
     o_dac_out       => s_dac_out,
-    o_clip          => s_clip,
-    i_mem_data      => s_mem_data_out,
-    i_mem_ready     => s_mem_ready,
-    i_mem_error     => s_mem_error,
-    o_mem_read_en   => s_mem_read,
-    o_mem_write_en  => s_mem_write,
-    o_address       => s_mem_address,
-    o_load_data     => s_mem_data_in
+    o_clip          => s_clip
   );
 
   TX: UART_TX
@@ -176,21 +128,6 @@ begin
     i_clk         => s_clk,
     o_uart_out    => s_tx_data_out,
     o_uart_end    => s_uart_tx_end
-  );
-
-  EVT_MEM : REC_MEMORY
-  generic map ( 10 )
-  port map (
-    i_clk           => s_clk,
-    i_reset_n       => s_rst,
-    i_enable        => s_mem_enable,
-    i_read_en       => s_mem_read,
-    i_write_en      => s_mem_write,
-    i_address       => s_mem_address(11 downto 2), -- 4 byte align
-    i_load_data     => s_mem_data_in,
-    o_data          => s_mem_data_out,
-    o_mem_ready     => s_mem_ready,
-    o_mem_error     => s_mem_error
   );
 
   clock_gen : process
@@ -214,7 +151,6 @@ begin
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
 
-    s_mem_enable    <= '0';
     wait for 100 ns;
 
     --reset
@@ -229,7 +165,6 @@ begin
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
 
-    s_mem_enable    <= '0';
     wait for 100 ns;
 
     s_rst     <= '1';
@@ -243,7 +178,6 @@ begin
     s_tx_load_en    <= '0';
     s_tx_data       <= "00000000";
 
-    s_mem_enable    <= '1';
     wait for 2000 ns; -- allow load of samples
 
     -- very short press (not detected)

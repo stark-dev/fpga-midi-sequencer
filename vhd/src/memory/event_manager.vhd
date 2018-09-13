@@ -18,13 +18,9 @@ port (
 
   i_midi_ready    : in  std_logic;
 
-  i_data_ready    : in  std_logic;
   i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
-  i_mem_error     : in  std_logic;
-
-  o_mem_read      : out std_logic;
-  o_mem_write     : out std_logic;
   o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  o_mem_write     : out std_logic;
   o_mem_wr_mux    : out t_mem_wr_mux;
 
   o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -199,8 +195,6 @@ begin
             s_q_state <= st_write_data;
           elsif s_ts_match = '1' then
             s_q_state <= st_event;
-          elsif i_mem_error = '1' then
-            s_q_state <= st_error;
           else
             s_q_state <= st_scan;
           end if;
@@ -215,37 +209,21 @@ begin
             s_q_state <= st_init;
           end if;
         when st_wait_data =>
-          if i_data_ready = '1' then
-            s_q_state <= st_load_data;
-          else
-            s_q_state <= st_wait_data;
-          end if;
+          s_q_state <= st_load_data;
         when st_load_data =>
           s_q_state <= st_wait_ts;
         when st_wait_ts   =>
-          if i_data_ready = '1' then
-            s_q_state <= st_load_ts;
-          else
-            s_q_state <= st_wait_ts;
-          end if;
+          s_q_state <= st_load_ts;
         when st_load_ts   =>
           s_q_state <= st_scan;
         when st_write_data =>
           s_q_state <= st_wait_write_data;
         when st_wait_write_data =>
-          if i_data_ready = '1' then
-            s_q_state <= st_write_ts;
-          else
-            s_q_state <= st_wait_write_data;
-          end if;
+          s_q_state <= st_write_ts;
         when st_write_ts =>
           s_q_state <= st_wait_write_ts;
         when st_wait_write_ts =>
-          if i_data_ready = '1' then
-            s_q_state <= st_update;
-          else
-            s_q_state <= st_wait_write_ts;
-          end if;
+          s_q_state <= st_update;
         when st_update =>
           s_q_state <= st_idle;
         when st_error =>
@@ -258,7 +236,6 @@ begin
 
   p_fsm_ctrl: process(s_q_state, s_track_scan, s_sample_count, s_active_track, s_evt_end)
   begin
-    o_mem_read        <= '0';  -- read request
     o_mem_write       <= '0';  -- write request
     o_mem_wr_mux      <= mux_off;
     s_mem_address     <= (others => '0');
@@ -280,7 +257,6 @@ begin
 
     case s_q_state is
       when st_reset     =>
-        o_mem_read        <= '0';
         o_mem_write       <= '0';
         o_mem_wr_mux      <= mux_off;
         s_mem_address   <= (others => '0');
@@ -318,7 +294,6 @@ begin
         s_track_scan_en <= '1';
 
       when st_wait_data =>
-        o_mem_read        <= '1';
         s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_load_data =>
@@ -326,7 +301,6 @@ begin
         s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))), MEMORY_SIZE);
 
       when st_wait_ts   =>
-        o_mem_read        <= '1';
         s_mem_address <= to_unsigned((c_mem_track_size * (to_integer(s_track_scan))) + to_integer(8 * s_sample_count(to_integer(s_track_scan))) + 4, MEMORY_SIZE);
 
       when st_load_ts   =>
@@ -355,7 +329,6 @@ begin
         s_sample_count_en(to_integer(s_active_track)) <= '1'; -- increment active track sample counter
 
       when others       =>
-        o_mem_read        <= '0';  -- load request
         o_mem_write       <= '0';
         o_mem_wr_mux      <= mux_off;
         s_mem_address   <= (others => '0');

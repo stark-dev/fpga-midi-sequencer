@@ -32,16 +32,7 @@ entity TLE is
 
     -- DAC
     o_dac_out       : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
-    o_clip          : out std_logic;
-
-    -- rec memory
-    i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
-    i_mem_ready     : in  std_logic;
-    i_mem_error     : in  std_logic;
-    o_mem_read_en   : out std_logic;
-    o_mem_write_en  : out std_logic;
-    o_address       : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
-    o_load_data     : out std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0)
+    o_clip          : out std_logic
   );
 end TLE;
 
@@ -156,13 +147,9 @@ architecture STRUCT of TLE is
 
     i_midi_ready    : in  std_logic;
 
-    i_data_ready    : in  std_logic;
     i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
-    i_mem_error     : in  std_logic;
-
-    o_mem_read      : out std_logic;
-    o_mem_write     : out std_logic;
     o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+    o_mem_write     : out std_logic;
     o_mem_wr_mux    : out t_mem_wr_mux;
 
     o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -306,13 +293,10 @@ end component;
   signal s_pb_q_ready   : std_logic;
 
   -- playback queue and memory
-  signal s_mem_data       : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
   signal s_data_reload    : std_logic;
-  signal s_mem_ready      : std_logic;
-  signal s_mem_read_en    : std_logic;
-  signal s_mem_write_en   : std_logic;
-  signal s_mem_error      : std_logic;
-  signal s_mem_address    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  signal s_rec_mem_data   : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  signal s_rec_mem_wr_en  : std_logic;
+  signal s_rec_mem_add    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
   signal s_mem_wr_mux     : t_mem_wr_mux;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
@@ -328,16 +312,7 @@ end component;
 
 begin
 
-  s_mem_data      <= i_mem_data;
-  s_mem_ready     <= i_mem_ready;
-  s_mem_error     <= i_mem_error;
-  o_mem_read_en   <= s_mem_read_en;
-  o_mem_write_en  <= s_mem_write_en;
-  o_address       <= s_mem_address;
-  o_load_data     <= s_mem_wr_mux_in;
-
   o_dac_out       <= s_dac_out;
-
   o_clip          <= s_clip;
 
   s_data_reload   <= i_reset_n and not(s_restart);
@@ -416,14 +391,10 @@ begin
 
     i_midi_ready    => s_midi_ready,
 
-    i_data_ready    => s_mem_ready,
-    i_mem_data      => s_mem_data,
-
-    o_mem_read      => s_mem_read_en,
-    o_mem_write     => s_mem_write_en,
-    o_mem_address   => s_mem_address,
+    i_mem_data      => s_rec_mem_data,
+    o_mem_address   => s_rec_mem_add,
+    o_mem_write     => s_rec_mem_wr_en,
     o_mem_wr_mux    => s_mem_wr_mux,
-    i_mem_error     => s_mem_error,
 
     o_pb_ready      => s_pb_ready,
     o_pb_end        => s_pb_end,
