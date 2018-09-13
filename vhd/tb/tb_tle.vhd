@@ -531,6 +531,23 @@ begin
     s_tx_data       <= "01111111";
     wait for 12*c_uart_period;
 
+    -- stop rec
+    s_rst     <= '1';
+    s_btn1    <= '0';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    wait for 120 * c_clock_half_p;
+
+    s_rst     <= '1';
+    s_btn1    <= '1';
+    s_btn2    <= '1';
+    s_btn3    <= '1';
+    s_btn4    <= '1';
+    s_tr_mute <= (others => '0');
+    wait for 1000 ns;
+
     -- menu
     s_rst     <= '1';
     s_btn1    <= '1';

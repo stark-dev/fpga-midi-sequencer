@@ -415,8 +415,8 @@ begin
   );
 
   REC_MEM : rec_memory
-	port (
-		address		 => s_rec_mem_add,
+	port map(
+		address		 => s_rec_mem_add(14 downto 2), -- address is byte aligned, memory is work aligned
 		clock		   => i_clk,
 		data		   => s_mem_wr_mux_in,
 		wren		   => s_rec_mem_wr_en,

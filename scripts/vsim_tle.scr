@@ -47,7 +47,7 @@ add wave -divider
 # pb/rec memory
 add wave DUT/s_rec_mem_add
 add wave DUT/s_rec_mem_wr_en
-add wave DUT/s_rec_mem_data
+add wave DUT/s_rec_mem_out
 add wave DUT/s_mem_wr_mux
 add wave DUT/s_mem_wr_mux_in
 add wave -divider
