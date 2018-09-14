@@ -5,7 +5,6 @@ incremental_db
 hc_output
 output_files
 *.ipinfo
-*.qpf
 *.qsf
 *.qws
 *.bak
