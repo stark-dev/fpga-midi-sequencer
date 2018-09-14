@@ -25,7 +25,7 @@ package UTILS_PKG is
   constant ST_TSS_SIZE    : natural := 11;  -- timestamp in seconds
   constant ST_TSF_SIZE    : natural := 12;  -- timestamp in fractions
   constant ST_RUN_SIZE    : natural := 1;   -- play / pause
-  constant ST_VOL_SIZE    : natural := 7;   -- volume
+  constant MAIN_VOL_MAX   : natural := 7;   -- main volume max
   -- constant ST_BPM_SIZE    : natural := 8;   -- bpm tempo
   -- constant ST_MTR_SIZE    : natural := 1;   -- metronome enable
 

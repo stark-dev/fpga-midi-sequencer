@@ -11,7 +11,7 @@ port (
   i_menu        : in  t_menu_option;
   i_ts_frac     : in  std_logic_vector(ST_TSF_SIZE - 1 downto 0);
   i_ts_secs     : in  std_logic_vector(ST_TSS_SIZE - 1 downto 0);
-  i_main_vol    : in  std_logic_vector(ST_VOL_SIZE - 1 downto 0);
+  i_main_vol    : in  natural range 0 to MAIN_VOL_MAX;
   i_active_tr   : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
   i_track_omni  : in  std_logic;
   i_track_poly  : in  std_logic;
@@ -36,9 +36,8 @@ architecture BHV of DISPLAY_CTRL is
   signal s_disp_4_4       : t_display_out;
 
   signal s_disp_3_4       : t_display_out;
-  signal s_disp_3_3       : t_display_out;
 
-  signal s_disp_2_4       : t_display_out;
+  signal s_disp_2_3       : t_display_out;
 
   signal s_disp_1_4       : t_display_out;
   signal s_disp_1_4_in    : std_logic_vector(3 downto 0);
@@ -49,6 +48,8 @@ architecture BHV of DISPLAY_CTRL is
   signal s_disp_0_3       : t_display_out;
 
   signal s_display_en     : std_logic;
+
+  signal s_main_vol_slv   : std_logic_vector(2 downto 0);
 
   component DISPLAY_MUX_3 is
   port (
@@ -76,6 +77,8 @@ begin
   s_ts_secs_1       <= i_ts_secs(3 downto 0);
   s_ts_secs_2       <= i_ts_secs(7 downto 4);
 
+  s_main_vol_slv    <= std_logic_vector(to_unsigned(i_main_vol, 3));
+
   -- first number is display index, second is display input width
   MUX_4_4 : DISPLAY_MUX_4
   port map(s_display_en, s_ts_secs_2, s_disp_4_4);
@@ -83,11 +86,8 @@ begin
   MUX_3_4 : DISPLAY_MUX_4
   port map(s_display_en, s_ts_secs_1, s_disp_3_4);
 
-  MUX_3_3 : DISPLAY_MUX_3
-  port map(s_display_en, i_main_vol(6 downto 4), s_disp_3_3);
-
-  MUX_2_4 : DISPLAY_MUX_4
-  port map(s_display_en, i_main_vol(3 downto 0), s_disp_2_4);
+  MUX_2_3 : DISPLAY_MUX_3
+  port map(s_display_en, s_main_vol_slv, s_disp_2_3);
 
   MUX_1_4 : DISPLAY_MUX_4
   port map(s_display_en, s_disp_1_4_in, s_disp_1_4);
@@ -154,7 +154,7 @@ begin
     case i_state is
       when st_idle    =>
         if i_track_rec = '0' then
-          s_display_array(5)  <= ds_0;
+          s_display_array(5)  <= ds_P;
         else
           s_display_array(5)  <= ds_R;
         end if;
@@ -187,8 +187,6 @@ begin
   p_display_4_control: process(i_state, i_menu, s_disp_4_4)
   begin
     case i_state is
-      when st_idle    =>
-        s_display_array(4)  <= ds_V;
       when st_play    =>
         s_display_array(4)  <= s_disp_4_4;
       when st_rec     =>
@@ -215,11 +213,11 @@ begin
     end case;
   end process;
 
-  p_display_3_control: process(i_state, i_menu, s_disp_3_4, s_disp_3_3)
+  p_display_3_control: process(i_state, i_menu, s_disp_3_4)
   begin
     case i_state is
       when st_idle    =>
-        s_display_array(3)  <= s_disp_3_3;
+        s_display_array(3)  <= ds_V;
       when st_play    =>
         s_display_array(3)  <= s_disp_3_4;
       when st_rec     =>
@@ -246,11 +244,11 @@ begin
     end case;
   end process;
 
-  p_display_2_control: process(i_state, i_menu, s_disp_2_4)
+  p_display_2_control: process(i_state, i_menu, s_disp_2_3)
   begin
     case i_state is
       when st_idle    =>
-        s_display_array(2)  <= s_disp_2_4;
+        s_display_array(2)  <= s_disp_2_3;
       when st_play    =>
         s_display_array(2)  <= ds_F;
       when st_rec     =>

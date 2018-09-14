@@ -56,7 +56,7 @@ architecture BHV of SEQUENCER_CORE is
 --------------------------------------------------------------------------------
   constant c_menu_size    : integer := 2;
 
-  constant c_max_vol      : integer := 2**ST_VOL_SIZE - 1;
+  constant c_max_vol      : integer := MAIN_VOL_MAX;
   constant c_min_vol      : integer := 0;
 
   -- real
@@ -164,7 +164,7 @@ port (
   i_menu        : in  t_menu_option;
   i_ts_frac     : in  std_logic_vector(ST_TSF_SIZE - 1 downto 0);
   i_ts_secs     : in  std_logic_vector(ST_TSS_SIZE - 1 downto 0);
-  i_main_vol    : in  std_logic_vector(ST_VOL_SIZE - 1 downto 0);
+  i_main_vol    : in  natural range 0 to MAIN_VOL_MAX;
   i_active_tr   : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
   i_track_omni  : in  std_logic;
   i_track_poly  : in  std_logic;
@@ -243,7 +243,7 @@ end component;
   signal s_vol_up         : std_logic;
   signal s_vol_down       : std_logic;
   signal s_vol_rst        : std_logic;
-  signal s_main_vol       : unsigned(ST_VOL_SIZE - 1 downto 0);
+  signal s_main_vol       : natural range 0 to c_max_vol;
 
   -- menu option toggle
   signal s_menu_op_toggle : std_logic;
@@ -481,7 +481,7 @@ begin
     i_menu        => s_menu_option,
     i_ts_frac     => s_ts_frac,
     i_ts_secs     => s_ts_secs,
-    i_main_vol    => std_logic_vector(s_main_vol),
+    i_main_vol    => s_main_vol,
     i_active_tr   => std_logic_vector(s_active_tr),
     i_track_omni  => s_track_omni,
     i_track_poly  => s_track_poly,
@@ -705,14 +705,14 @@ begin
   p_volume_ctrl: process(i_clk, i_reset_n, s_vol_rst)
   begin
     if i_reset_n = '0' or s_vol_rst = '0' then
-      s_main_vol <= (others => '1');
+      s_main_vol <= c_max_vol;
     elsif i_clk'event and i_clk = '1' then
       if s_vol_up = '1' then
-        if s_main_vol /= to_unsigned(c_max_vol, ST_VOL_SIZE) then
+        if s_main_vol /= c_max_vol then
           s_main_vol <= s_main_vol + 1;
         end if;
       elsif s_vol_down = '1' then
-        if s_main_vol /= to_unsigned(c_min_vol, ST_VOL_SIZE) then
+        if s_main_vol /= c_min_vol then
           s_main_vol <= s_main_vol - 1;
         end if;
       end if;
