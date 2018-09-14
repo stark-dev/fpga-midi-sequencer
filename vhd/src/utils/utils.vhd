@@ -34,6 +34,7 @@ package UTILS_PKG is
   constant TR_PATCH_SIZE  : natural := 7;
   constant TR_CH_SIZE     : natural := 4;
   constant TR_VOL_SIZE    : natural := 3;
+  constant TR_VOL_MAX     : natural := 7;
   constant TR_PAN_SIZE    : natural := 7;
 
   -- display constants

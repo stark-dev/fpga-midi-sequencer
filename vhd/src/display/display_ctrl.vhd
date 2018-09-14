@@ -107,7 +107,7 @@ begin
     end if;
   end process;
 
-  p_disp_1_4_in: process(i_state, i_menu, s_ts_frac_2, i_track_patch, i_track_vol, i_track_pan)
+  p_disp_1_4_in: process(i_state, i_menu, s_ts_frac_2, i_track_patch, i_track_pan)
   begin
     case i_state is
       when st_play    =>
@@ -118,8 +118,6 @@ begin
         case i_menu is
           when op_patch     =>
             s_disp_1_4_in <= '0' & i_track_patch(6 downto 4);
-          when op_track_vol =>
-            s_disp_1_4_in <= '0' & i_track_vol;
           when op_pan       =>
             s_disp_1_4_in <= '0' & i_track_pan(6 downto 4);
           when others       =>
@@ -299,8 +297,6 @@ begin
           when op_track     =>
             s_display_array(1)  <= ds_OFF;
           when op_patch     =>
-            s_display_array(1)  <= s_disp_1_4;
-          when op_track_vol =>
             s_display_array(1)  <= s_disp_1_4;
           when op_pan       =>
             s_display_array(1)  <= s_disp_1_4;
