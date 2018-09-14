@@ -62,7 +62,7 @@ architecture TEST of TB_TLE is
   constant c_clock        : integer := 1000000000/(2*c_ext_clock);
   constant c_clock_half_p : time := c_clock * 1 ns;
   -- uart constants
-  constant c_baud_rate    : integer := 115200;
+  constant c_baud_rate    : integer := MIDI_BAUD_RATE;
   constant c_uart         : integer := 1000000000/c_baud_rate;
   constant c_databits     : integer := 8;
   constant c_parity       : boolean := false;
