@@ -83,6 +83,8 @@ architecture BHV of SOUND_SYNTH is
   signal s_current_sample_rst   : std_logic;
   signal s_current_sample       : std_logic_vector(2*SAMPLE_WIDTH - 1 downto 0);
 
+  signal s_sample_offset        : std_logic_vector(2*SAMPLE_WIDTH - 1 downto 0);
+
   -- out sample register
   signal s_out_sample_in        : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
   signal s_out_sample_en        : std_logic;
@@ -120,7 +122,8 @@ begin
   s_mem_sample_ext(2*SAMPLE_WIDTH - 1 downto SAMPLE_WIDTH) <= (others => i_mem_sample(SAMPLE_WIDTH - 1));
   s_mem_sample_ext(SAMPLE_WIDTH - 1 downto 0) <= i_mem_sample;
 
-  s_current_sample_in <= std_logic_vector(signed(s_current_sample) + signed(s_mem_sample_ext));
+  s_sample_offset     <= std_logic_vector(to_unsigned(2**(SAMPLE_WIDTH - 1), 2*SAMPLE_WIDTH));
+  s_current_sample_in <= std_logic_vector(signed(s_current_sample) + signed(s_mem_sample_ext) + signed(s_sample_offset));
 
   p_next_sample_set: process(s_fsm_state, i_sample_clk)
   begin
