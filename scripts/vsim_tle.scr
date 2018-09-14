@@ -18,14 +18,14 @@ add wave -divider
 
 # core status and timestamp
 add wave DUT/CORE/s_modules_ready
-add wave DUT/s_restart
-add wave DUT/s_data_reload
+add wave DUT/CORE/s_restart
+add wave DUT/CORE/s_data_reload
 add wave DUT/CORE/s_fsm_status
 add wave DUT/CORE/s_menu_option
-add wave DUT/s_rec_mode
+add wave DUT/CORE/s_rec_mode
 add wave DUT/CORE/s_play_pause_n
 add wave DUT/CORE/s_main_vol
-add wave DUT/s_active_track
+add wave DUT/CORE/s_active_tr
 add wave -unsigned DUT/s_ts_seconds
 add wave -unsigned DUT/s_ts_fraction
 add wave DUT/CORE/s_play_end
@@ -38,10 +38,9 @@ add wave DUT/s_midi_data
 add wave -divider
 
 # playback queue
-add wave DUT/s_pb_q_ready
-add wave DUT/s_pb_ready
-add wave DUT/s_pb_end
-add wave DUT/s_pb_data
+add wave DUT/CORE/s_pb_ready
+add wave DUT/CORE/s_pb_end
+add wave DUT/CORE/s_pb_data
 add wave -divider
 
 # pb/rec memory

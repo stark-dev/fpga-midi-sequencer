@@ -22,20 +22,15 @@ port (
   i_midi_ready    : in  std_logic;
   i_midi_data     : in  std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
 
-  -- playback events
-  i_pb_ready      : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  i_pb_end        : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  i_pb_data       : in  t_midi_data;
-
-  -- external module ready
-  i_pb_q_ready    : in  std_logic;
+  -- rec memory
+  i_rec_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  o_rec_mem_add   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  o_rec_mem_wr    : out std_logic;
+  o_rec_mem_mux   : out t_mem_wr_mux;
 
   -- outputs
   o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
   o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
-  o_active_track  : out std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
-  o_rec_mode      : out std_logic;
-  o_restart       : out std_logic;
 
   o_sound_on      : out std_logic;
   o_sg_patch      : out t_sg_patch;
@@ -176,6 +171,32 @@ port (
 );
 end component;
 
+component EVENT_MANAGER is
+port (
+  i_clk           : in  std_logic;
+  i_reset_n       : in  std_logic;
+
+  i_rec_mode      : in  std_logic;
+  i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
+  i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
+
+  i_active_track  : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
+
+  i_midi_ready    : in  std_logic;
+
+  i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+  o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+  o_mem_write     : out std_logic;
+  o_mem_wr_mux    : out t_mem_wr_mux;
+
+  o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  o_pb_data       : out t_midi_data;
+
+  o_init_ready    : out std_logic
+);
+end component;
+
 component PLAYBACK_ENGINE is
 port (
   i_clk         : in  std_logic;
@@ -278,6 +299,14 @@ end component;
   signal s_track_vol      : std_logic_vector(TR_VOL_SIZE - 1 downto 0);
   signal s_track_patch    : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
 
+  -- event manager
+  signal s_evt_mng_ready  : std_logic;
+  signal s_data_reload    : std_logic;
+  signal s_rec_mode       : std_logic;
+  signal s_pb_ready       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_pb_end         : std_logic_vector(SEQ_TRACKS - 1 downto 0);
+  signal s_pb_data        : t_midi_data;
+
   -- sound gen control
   signal s_sound_on       : std_logic;
   signal s_sound_rst      : std_logic;
@@ -293,8 +322,6 @@ begin
 
   o_ts_seconds      <= s_ts_secs;
   o_ts_fraction     <= s_ts_frac;
-  o_active_track    <= std_logic_vector(s_active_tr);
-  o_restart         <= s_restart;
 
   p_poly_patch_assign: process(s_tr_status)
   begin
@@ -308,16 +335,18 @@ begin
   s_active_tr_tc_v  <= to_unsigned(SEQ_TRACKS - 1, ST_TRACK_SIZE);
   s_tr_mute         <= i_tr_mute;
 
+  s_data_reload     <= i_reset_n and not(s_restart);
+
   -- current timestamp
   s_ts_current(ST_TS_RESERV) <= (others => '0');
   s_ts_current(ST_TSS_RANGE) <= s_ts_secs;
   s_ts_current(ST_TSF_RANGE) <= s_ts_frac;
 
   s_play_end        <= '1' when (s_ts_current = s_ts_end) else
-                       '1' when and_reduce(i_pb_end) = '1' else
+                       '1' when and_reduce(s_pb_end) = '1' else
                        '0';
 
-  s_modules_ready   <= i_pb_q_ready; -- TODO add other module ready signals in AND
+  s_modules_ready   <= s_evt_mng_ready; -- TODO add other module ready signals in AND
 
   -- buttons
   s_tr_toggle_rec   <= s_btn_r_s when (s_fsm_status = st_idle) else '0';
@@ -492,6 +521,31 @@ begin
     o_display_a   => s_display_array
   );
 
+  EVT_MNGR : EVENT_MANAGER
+  port map(
+    i_clk           => i_clk,
+    i_reset_n       => i_reset_n,
+
+    i_rec_mode      => s_rec_mode,
+    i_ts_seconds    => s_ts_secs,
+    i_ts_fraction   => s_ts_frac,
+
+    i_active_track  => std_logic_vector(s_active_tr),
+
+    i_midi_ready    => i_midi_ready,
+
+    i_mem_data      => i_rec_data,
+    o_mem_address   => o_rec_mem_add,
+    o_mem_write     => o_rec_mem_wr,
+    o_mem_wr_mux    => o_rec_mem_mux,
+
+    o_pb_ready      => s_pb_ready,
+    o_pb_end        => s_pb_end,
+    o_pb_data       => s_pb_data,
+
+    o_init_ready    => s_evt_mng_ready
+  );
+
   PB_ENGINE_GEN:
   for i in 0 to SEQ_TRACKS - 1 generate
     PLAYBACK_ENG_X : PLAYBACK_ENGINE
@@ -508,7 +562,7 @@ begin
     );
   end generate;
 
-  p_sound_evt_in_mux: process(s_active_tr, i_midi_ready, i_midi_data, i_pb_ready, i_pb_data, s_tr_mute)
+  p_sound_evt_in_mux: process(s_active_tr, i_midi_ready, i_midi_data, s_pb_ready, s_pb_data, s_tr_mute)
   begin
     for i in 0 to SEQ_TRACKS - 1 loop
       if s_tr_mute(i) = '1' then
@@ -516,8 +570,8 @@ begin
           s_evt_ready(i)  <= i_midi_ready;
           s_evt_data(i)   <= i_midi_data;
         else
-          s_evt_ready(i)  <= i_pb_ready(i);
-          s_evt_data(i)   <= i_pb_data(i);
+          s_evt_ready(i)  <= s_pb_ready(i);
+          s_evt_data(i)   <= s_pb_data(i);
         end if;
       else
         s_evt_ready(i)  <= '0';
@@ -600,7 +654,7 @@ begin
       when st_reset   =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '0';
@@ -611,7 +665,7 @@ begin
       when st_init    =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -622,7 +676,7 @@ begin
       when st_idle    =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -633,7 +687,7 @@ begin
       when st_play    =>
         s_play_pause_n    <= '1';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -644,7 +698,7 @@ begin
       when st_rec     =>
         s_play_pause_n    <= '1';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '1';
+        s_rec_mode        <= '1';
         s_restart         <= '0';
         s_sound_on        <= '1';
         s_active_tr_rst   <= '1';
@@ -655,7 +709,7 @@ begin
       when st_stop    =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -670,7 +724,7 @@ begin
         else
           s_ts_end_r_en     <= '0';
         end if;
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -681,7 +735,7 @@ begin
       when st_menu    =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '0';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '1';
@@ -692,7 +746,7 @@ begin
       when others     =>
         s_play_pause_n    <= '0';
         s_ts_end_r_en     <= '0';
-        o_rec_mode        <= '0';
+        s_rec_mode        <= '0';
         s_restart         <= '1';
         s_sound_on        <= '0';
         s_active_tr_rst   <= '0';

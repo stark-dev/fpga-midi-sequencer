@@ -55,20 +55,15 @@ architecture STRUCT of TLE is
     i_midi_ready    : in  std_logic;
     i_midi_data     : in  std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
 
-    -- playback events
-    i_pb_ready      : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    i_pb_end        : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    i_pb_data       : in  t_midi_data;
-
-    -- external module ready
-    i_pb_q_ready    : in  std_logic;
+    -- rec memory
+    i_rec_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
+    o_rec_mem_add   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
+    o_rec_mem_wr    : out std_logic;
+    o_rec_mem_mux   : out t_mem_wr_mux;
 
     -- outputs
     o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
     o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
-    o_active_track  : out std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
-    o_rec_mode      : out std_logic;
-    o_restart       : out std_logic;
 
     o_sound_on      : out std_logic;
     o_sg_patch      : out t_sg_patch;
@@ -133,32 +128,6 @@ architecture STRUCT of TLE is
       o_uart_end    : out   std_logic
     );
   end component;
-
-  component EVENT_MANAGER is
-  port (
-    i_clk           : in  std_logic;
-    i_reset_n       : in  std_logic;
-
-    i_rec_mode      : in  std_logic;
-    i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
-    i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
-
-    i_active_track  : in  std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
-
-    i_midi_ready    : in  std_logic;
-
-    i_mem_data      : in  std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
-    o_mem_address   : out std_logic_vector(MEMORY_SIZE - 1 downto 0);
-    o_mem_write     : out std_logic;
-    o_mem_wr_mux    : out t_mem_wr_mux;
-
-    o_pb_ready      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    o_pb_end        : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
-    o_pb_data       : out t_midi_data;
-
-    o_init_ready    : out std_logic
-  );
-end component;
 
 component SOUND_SYNTH is
 port (
@@ -266,45 +235,36 @@ end component;
   -- display
   signal s_display      : t_display_array;
 
-  -- timestamp gen
+  -- timestamp
   signal s_ts_seconds   : std_logic_vector(ST_TSS_SIZE-1 downto 0);
   signal s_ts_fraction  : std_logic_vector(ST_TSF_SIZE-1 downto 0);
-  signal s_active_track : std_logic_vector(ST_TRACK_SIZE - 1 downto 0);
-  signal s_rec_mode     : std_logic;
-  signal s_restart      : std_logic;
 
   -- uart rx
   signal s_rx_data      : std_logic_vector(c_databits-1 downto 0);
   signal s_uart_rx_end  : std_logic;
   signal s_uart_rx_err  : std_logic;
 
-  -- sound synthesis module
-  signal s_clip         : std_logic;
-
-  -- sound gen
+  -- midi filter
   signal s_midi_ready   : std_logic;
   signal s_midi_data    : std_logic_vector(SEQ_EVENT_SIZE - 1  downto 0);
-  signal s_pb_ready     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_pb_end       : std_logic_vector(SEQ_TRACKS - 1 downto 0);
-  signal s_pb_data      : t_midi_data;
+
+  -- sample clock
+  signal s_sample_clk   : std_logic;
+
+  -- sound gen
+  signal s_sound_on     : std_logic;
   signal s_sg_note      : t_sg_note;
   signal s_sg_vel       : t_sg_vel;
   signal s_sg_start     : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_sg_stop      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
   signal s_sg_poly      : std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
-  signal s_sound_on     : std_logic;
-  signal s_sample_clk   : std_logic;
-  signal s_sg_patch     : t_sg_patch;
-
+  -- sound synth
+  signal s_sg_patch       : t_sg_patch;
   signal s_sample_enable  : t_sample_enable;
   signal s_sample_index   : t_sample_idx;
 
-  -- ext module ready
-  signal s_pb_q_ready   : std_logic;
-
   -- playback queue and memory
-  signal s_data_reload    : std_logic;
   signal s_rec_mem_wr_en  : std_logic;
   signal s_rec_mem_add    : std_logic_vector(MEMORY_SIZE - 1 downto 0);
   signal s_rec_mem_out    : std_logic_vector(SEQ_EVENT_SIZE-1 downto 0);
@@ -320,13 +280,12 @@ end component;
 
   -- sample out
   signal s_dac_out        : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_clip           : std_logic;
 
 begin
 
   o_dac_out       <= s_dac_out;
   o_clip          <= s_clip;
-
-  s_data_reload   <= i_reset_n and not(s_restart);
 
   s_sample_mem_en <= i_reset_n;
 
@@ -341,15 +300,12 @@ begin
     i_tr_mute       => i_tr_mute,
     i_midi_ready    => s_midi_ready,
     i_midi_data     => s_midi_data,
-    i_pb_ready      => s_pb_ready,
-    i_pb_end        => s_pb_end,
-    i_pb_data       => s_pb_data,
-    i_pb_q_ready    => s_pb_q_ready,
+    i_rec_data      => s_rec_mem_out,
+    o_rec_mem_add   => s_rec_mem_add,
+    o_rec_mem_wr    => s_rec_mem_wr_en,
+    o_rec_mem_mux   => s_mem_wr_mux,
     o_ts_seconds    => s_ts_seconds,
     o_ts_fraction   => s_ts_fraction,
-    o_active_track  => s_active_track,
-    o_rec_mode      => s_rec_mode,
-    o_restart       => s_restart,
     o_sound_on      => s_sound_on,
     o_sg_patch      => s_sg_patch,
     o_sg_note       => s_sg_note,
@@ -387,31 +343,6 @@ begin
     o_uart_data   => s_rx_data,
     o_uart_end    => s_uart_rx_end,
     o_uart_err    => s_uart_rx_err
-  );
-
-  EVT_MNG : EVENT_MANAGER
-  port map (
-    i_clk           => i_clk,
-    i_reset_n       => s_data_reload,
-
-    i_rec_mode      => s_rec_mode,
-    i_ts_seconds    => s_ts_seconds,
-    i_ts_fraction   => s_ts_fraction,
-
-    i_active_track  => s_active_track,
-
-    i_midi_ready    => s_midi_ready,
-
-    i_mem_data      => s_rec_mem_out,
-    o_mem_address   => s_rec_mem_add,
-    o_mem_write     => s_rec_mem_wr_en,
-    o_mem_wr_mux    => s_mem_wr_mux,
-
-    o_pb_ready      => s_pb_ready,
-    o_pb_end        => s_pb_end,
-    o_pb_data       => s_pb_data,
-
-    o_init_ready    => s_pb_q_ready
   );
 
   REC_MEM : rec_memory
