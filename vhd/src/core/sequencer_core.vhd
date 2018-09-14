@@ -11,12 +11,20 @@ port (
   i_clk           : in  std_logic;
   i_reset_n       : in  std_logic;
 
-  i_btn_left      : in  std_logic;
-  i_btn_up        : in  std_logic;
-  i_btn_down      : in  std_logic;
-  i_btn_right     : in  std_logic;
+  i_btn_l_l       : in  std_logic;
+  i_btn_l_s       : in  std_logic;
+  i_btn_u_l       : in  std_logic;
+  i_btn_u_s       : in  std_logic;
+  i_btn_d_l       : in  std_logic;
+  i_btn_d_s       : in  std_logic;
+  i_btn_r_l       : in  std_logic;
+  i_btn_r_s       : in  std_logic;
 
   i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
+
+  -- timestamp
+  i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
+  i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
   -- direct midi events
   i_midi_ready    : in  std_logic;
@@ -29,10 +37,9 @@ port (
   o_rec_mem_mux   : out t_mem_wr_mux;
 
   -- outputs
-  o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
-  o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
-
   o_sound_on      : out std_logic;
+  o_restart       : out std_logic;
+  o_play_pause_n  : out std_logic;
   o_sg_patch      : out t_sg_patch;
   o_sg_note       : out t_sg_note;
   o_sg_vel        : out t_sg_vel;
@@ -53,19 +60,6 @@ architecture BHV of SEQUENCER_CORE is
 
   constant c_max_vol      : integer := MAIN_VOL_MAX;
   constant c_min_vol      : integer := 0;
-
-  -- real
-  constant c_btn_size     : integer := 32;
-  constant c_btn_short    : integer := 2500000;
-  constant c_btn_long     : integer := 25000000;
-  constant c_ts_clock_div : integer := 12207;
-
-  -- testing with modelsim
-  -- constant c_btn_size     : integer := 8;
-  -- constant c_btn_short    : integer := 50;
-  -- constant c_btn_long     : integer := 150;
-  -- constant c_ts_clock_div : integer := 100;
-
 
 --------------------------------------------------------------------------------
 -- types
@@ -119,38 +113,6 @@ port (
 
   o_track_status  : out std_logic_vector(TR_ST_SIZE - 1 downto 0)
   );
-end component;
-
-component TIMESTAMP_GEN is
-generic (
-  g_clock_div   : integer := 12207
-);
-port (
-  -- system inputs
-  i_clk         : in  std_logic;
-  i_reset_n     : in  std_logic;
-  -- play control
-  i_play_stop_n : in  std_logic;
-  i_restart     : in  std_logic;
-  -- timestamp output
-  o_ts_fraction : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
-  o_ts_seconds  : out std_logic_vector(ST_TSS_SIZE-1 downto 0)
-  );
-end component;
-
-component SL_BUTTON is
-generic (
-  g_size      : integer := 12;
-  g_short     : integer := 500;
-  g_long      : integer := 1000
-);
-port (
-  i_clk         : in  std_logic;
-  i_reset_n     : in  std_logic;
-  i_btn         : in  std_logic;
-  o_long        : out std_logic;
-  o_short       : out std_logic
-);
 end component;
 
 component DISPLAY_CTRL is
@@ -218,9 +180,6 @@ end component;
   signal s_fsm_status     : t_core_fsm;
 
   -- timestamp registers
-  signal s_ts_frac        : std_logic_vector(ST_TSF_SIZE - 1 downto 0);
-  signal s_ts_secs        : std_logic_vector(ST_TSS_SIZE - 1 downto 0);
-
   signal s_ts_current     : std_logic_vector(SEQ_TIME_SIZE - 1 downto 0);
 
   signal s_ts_end_r_en    : std_logic;
@@ -233,16 +192,6 @@ end component;
   signal s_play_end       : std_logic;
 
   signal s_modules_ready  : std_logic;
-
-  -- interface buttons (s -> short, l -> long)
-  signal s_btn_l_s        : std_logic;
-  signal s_btn_l_l        : std_logic;
-  signal s_btn_u_s        : std_logic;
-  signal s_btn_u_l        : std_logic;
-  signal s_btn_d_s        : std_logic;
-  signal s_btn_d_l        : std_logic;
-  signal s_btn_r_s        : std_logic;
-  signal s_btn_r_l        : std_logic;
 
   -- interface display array
   signal s_display_array  : t_display_array;
@@ -319,9 +268,8 @@ begin
   -- output assignment
   o_display_a       <= s_display_array;
   o_sound_on        <= s_sound_on;
-
-  o_ts_seconds      <= s_ts_secs;
-  o_ts_fraction     <= s_ts_frac;
+  o_restart         <= s_restart;
+  o_play_pause_n    <= s_play_pause_n;
 
   p_poly_patch_assign: process(s_tr_status)
   begin
@@ -339,8 +287,8 @@ begin
 
   -- current timestamp
   s_ts_current(ST_TS_RESERV) <= (others => '0');
-  s_ts_current(ST_TSS_RANGE) <= s_ts_secs;
-  s_ts_current(ST_TSF_RANGE) <= s_ts_frac;
+  s_ts_current(ST_TSS_RANGE) <= i_ts_seconds;
+  s_ts_current(ST_TSF_RANGE) <= i_ts_fraction;
 
   s_play_end        <= '1' when (s_ts_current = s_ts_end) else
                        '1' when and_reduce(s_pb_end) = '1' else
@@ -349,34 +297,34 @@ begin
   s_modules_ready   <= s_evt_mng_ready; -- TODO add other module ready signals in AND
 
   -- buttons
-  s_tr_toggle_rec   <= s_btn_r_s when (s_fsm_status = st_idle) else '0';
+  s_tr_toggle_rec   <= i_btn_r_s when (s_fsm_status = st_idle) else '0';
 
-  s_vol_up          <= s_btn_u_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
-  s_vol_down        <= s_btn_d_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
+  s_vol_up          <= i_btn_u_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
+  s_vol_down        <= i_btn_d_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
 
-  s_menu_op_toggle  <= s_btn_r_s when (s_fsm_status = st_menu) else '0';
+  s_menu_op_toggle  <= i_btn_r_s when (s_fsm_status = st_menu) else '0';
 
-  s_active_tr_up    <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_track) else '0';
-  s_active_tr_down  <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_track) else '0';
+  s_active_tr_up    <= i_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_track) else '0';
+  s_active_tr_down  <= i_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_track) else '0';
 
-  s_tr_patch_up     <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
-  s_tr_patch_dn     <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
-  s_tr_patch_rst    <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '1';
+  s_tr_patch_up     <= i_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
+  s_tr_patch_dn     <= i_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '0';
+  s_tr_patch_rst    <= not(i_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_patch) else '1';
 
   s_tr_ch_up        <= '0'; -- TODO decide if channel is controlled by sequencer or not
   s_tr_ch_dn        <= '0';
   s_tr_ch_rst       <= '1';
 
-  s_tr_vol_up       <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
-  s_tr_vol_dn       <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
-  s_tr_vol_rst      <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '1';
+  s_tr_vol_up       <= i_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
+  s_tr_vol_dn       <= i_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '0';
+  s_tr_vol_rst      <= not(i_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_track_vol) else '1';
 
-  s_tr_pan_up       <= s_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
-  s_tr_pan_dn       <= s_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
-  s_tr_pan_rst      <= not(s_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '1';
+  s_tr_pan_up       <= i_btn_u_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
+  s_tr_pan_dn       <= i_btn_d_s when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '0';
+  s_tr_pan_rst      <= not(i_btn_r_l) when (s_fsm_status = st_menu) and (s_menu_option = op_pan) else '1';
 
-  s_tr_poly_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
-  s_tr_omni_toggle  <= (s_btn_u_s or s_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
+  s_tr_poly_toggle  <= (i_btn_u_s or i_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_poly) else '0';
+  s_tr_omni_toggle  <= (i_btn_u_s or i_btn_d_s) when (s_fsm_status = st_menu) and (s_menu_option = op_omni) else '0';
 
   -- track status fields
   s_track_omni      <= s_tr_status(to_integer(s_active_tr))(TR_OMNI_BIT);
@@ -391,17 +339,6 @@ begin
   s_sound_rst       <= i_reset_n;   -- TODO add all sound off
 
   -- components
-  TS_GEN : TIMESTAMP_GEN
-  generic map (c_ts_clock_div)
-  port map (
-    i_clk           => i_clk,
-    i_reset_n       => i_reset_n,
-    i_play_stop_n   => s_play_pause_n,
-    i_restart       => s_restart,
-    o_ts_fraction   => s_ts_frac,
-    o_ts_seconds    => s_ts_secs
-  );
-
   TS_END : REGISTER_N
   generic map (SEQ_TIME_SIZE)
   port map(
@@ -448,68 +385,12 @@ begin
       );
   end generate;
 
-  BTN_UP : SL_BUTTON
-  generic map (
-    g_size        => c_btn_size,
-    g_short       => c_btn_short,
-    g_long        => c_btn_long
-  )
-  port map (
-    i_clk         => i_clk,
-    i_reset_n     => i_reset_n,
-    i_btn         => i_btn_up,
-    o_long        => s_btn_u_l,
-    o_short       => s_btn_u_s
-  );
-
-  BTN_DOWN : SL_BUTTON
-  generic map (
-    g_size        => c_btn_size,
-    g_short       => c_btn_short,
-    g_long        => c_btn_long
-  )
-  port map (
-    i_clk         => i_clk,
-    i_reset_n     => i_reset_n,
-    i_btn         => i_btn_down,
-    o_long        => s_btn_d_l,
-    o_short       => s_btn_d_s
-  );
-
-  BTN_LEFT : SL_BUTTON
-  generic map (
-    g_size        => c_btn_size,
-    g_short       => c_btn_short,
-    g_long        => c_btn_long
-  )
-  port map (
-    i_clk         => i_clk,
-    i_reset_n     => i_reset_n,
-    i_btn         => i_btn_left,
-    o_long        => s_btn_l_l,
-    o_short       => s_btn_l_s
-  );
-
-  BTN_RIGTH : SL_BUTTON
-  generic map (
-    g_size        => c_btn_size,
-    g_short       => c_btn_short,
-    g_long        => c_btn_long
-  )
-  port map (
-    i_clk         => i_clk,
-    i_reset_n     => i_reset_n,
-    i_btn         => i_btn_right,
-    o_long        => s_btn_r_l,
-    o_short       => s_btn_r_s
-  );
-
   DISPLAY_C : DISPLAY_CTRL
   port map(
     i_state       => s_fsm_status,
     i_menu        => s_menu_option,
-    i_ts_frac     => s_ts_frac,
-    i_ts_secs     => s_ts_secs,
+    i_ts_frac     => i_ts_fraction,
+    i_ts_secs     => i_ts_seconds,
     i_main_vol    => s_main_vol,
     i_active_tr   => std_logic_vector(s_active_tr),
     i_track_omni  => s_track_omni,
@@ -527,8 +408,8 @@ begin
     i_reset_n       => i_reset_n,
 
     i_rec_mode      => s_rec_mode,
-    i_ts_seconds    => s_ts_secs,
-    i_ts_fraction   => s_ts_frac,
+    i_ts_seconds    => i_ts_seconds,
+    i_ts_fraction   => i_ts_fraction,
 
     i_active_track  => std_logic_vector(s_active_tr),
 
@@ -598,22 +479,22 @@ begin
           end if;
 
         when st_idle    =>
-          if s_btn_l_s = '1' then
+          if i_btn_l_s = '1' then
             if s_track_rec = '1' then
               s_fsm_status  <= st_rec;
             else
               s_fsm_status  <= st_play;
             end if;
-          elsif s_btn_l_l = '1' then
+          elsif i_btn_l_l = '1' then
             s_fsm_status  <= st_stop;
-          elsif s_btn_r_l = '1' then
+          elsif i_btn_r_l = '1' then
             s_fsm_status  <= st_menu;
           else
             s_fsm_status  <= st_idle;
           end if;
 
         when st_play    =>
-          if s_btn_l_s = '1' then
+          if i_btn_l_s = '1' then
             s_fsm_status  <= st_idle;
           elsif s_play_end = '1' then
             s_fsm_status  <= st_stop;
@@ -622,7 +503,7 @@ begin
           end if;
 
         when st_rec     =>
-          if s_btn_l_s = '1' then
+          if i_btn_l_s = '1' then
             s_fsm_status  <= st_end;
           else
             s_fsm_status  <= st_rec;
@@ -635,7 +516,7 @@ begin
           s_fsm_status  <= st_init;
 
         when st_menu    =>
-          if s_btn_l_s = '1' then
+          if i_btn_l_s = '1' then
             s_fsm_status  <= st_idle;
           else
             s_fsm_status  <= st_menu;

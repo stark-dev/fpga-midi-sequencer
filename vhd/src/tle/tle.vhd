@@ -44,12 +44,20 @@ architecture STRUCT of TLE is
     i_clk           : in  std_logic;
     i_reset_n       : in  std_logic;
 
-    i_btn_left      : in  std_logic;
-    i_btn_up        : in  std_logic;
-    i_btn_down      : in  std_logic;
-    i_btn_right     : in  std_logic;
+    i_btn_l_l       : in  std_logic;
+    i_btn_l_s       : in  std_logic;
+    i_btn_u_l       : in  std_logic;
+    i_btn_u_s       : in  std_logic;
+    i_btn_d_l       : in  std_logic;
+    i_btn_d_s       : in  std_logic;
+    i_btn_r_l       : in  std_logic;
+    i_btn_r_s       : in  std_logic;
 
     i_tr_mute       : in  std_logic_vector(SEQ_TRACKS - 1 downto 0);
+
+    -- timestamp
+    i_ts_seconds    : in  std_logic_vector(ST_TSS_SIZE-1 downto 0);
+    i_ts_fraction   : in  std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
     -- direct midi events
     i_midi_ready    : in  std_logic;
@@ -62,10 +70,9 @@ architecture STRUCT of TLE is
     o_rec_mem_mux   : out t_mem_wr_mux;
 
     -- outputs
-    o_ts_seconds    : out std_logic_vector(ST_TSS_SIZE-1 downto 0);
-    o_ts_fraction   : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
-
     o_sound_on      : out std_logic;
+    o_restart       : out std_logic;
+    o_play_pause_n  : out std_logic;
     o_sg_patch      : out t_sg_patch;
     o_sg_note       : out t_sg_note;
     o_sg_vel        : out t_sg_vel;
@@ -74,6 +81,38 @@ architecture STRUCT of TLE is
     o_sg_poly       : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
 
     o_display_a     : out t_display_array
+  );
+  end component;
+
+  component TIMESTAMP_GEN is
+  generic (
+    g_clock_div   : integer := 12207
+  );
+  port (
+    -- system inputs
+    i_clk         : in  std_logic;
+    i_reset_n     : in  std_logic;
+    -- play control
+    i_play_stop_n : in  std_logic;
+    i_restart     : in  std_logic;
+    -- timestamp output
+    o_ts_fraction : out std_logic_vector(ST_TSF_SIZE-1 downto 0);
+    o_ts_seconds  : out std_logic_vector(ST_TSS_SIZE-1 downto 0)
+    );
+  end component;
+
+  component SL_BUTTON is
+  generic (
+    g_size      : integer := 12;
+    g_short     : integer := 500;
+    g_long      : integer := 1000
+  );
+  port (
+    i_clk         : in  std_logic;
+    i_reset_n     : in  std_logic;
+    i_btn         : in  std_logic;
+    o_long        : out std_logic;
+    o_short       : out std_logic
   );
   end component;
 
@@ -222,6 +261,18 @@ component rec_memory IS
 	);
 end component;
 
+  -- real
+  constant c_btn_size     : integer := 32;
+  constant c_btn_short    : integer := 2500000;
+  constant c_btn_long     : integer := 25000000;
+  constant c_ts_clock_div : integer := 12207;
+
+  -- testing with modelsim
+  -- constant c_btn_size     : integer := 8;
+  -- constant c_btn_short    : integer := 50;
+  -- constant c_btn_long     : integer := 150;
+  -- constant c_ts_clock_div : integer := 100;
+
   -- common
   constant c_ext_clock    : integer := 50000000;
   -- uart constants
@@ -235,7 +286,19 @@ end component;
   -- display
   signal s_display      : t_display_array;
 
+  -- interface buttons (s -> short, l -> long)
+  signal s_btn_l_s        : std_logic;
+  signal s_btn_l_l        : std_logic;
+  signal s_btn_u_s        : std_logic;
+  signal s_btn_u_l        : std_logic;
+  signal s_btn_d_s        : std_logic;
+  signal s_btn_d_l        : std_logic;
+  signal s_btn_r_s        : std_logic;
+  signal s_btn_r_l        : std_logic;
+
   -- timestamp
+  signal s_restart      : std_logic;
+  signal s_play_pause_n : std_logic;
   signal s_ts_seconds   : std_logic_vector(ST_TSS_SIZE-1 downto 0);
   signal s_ts_fraction  : std_logic_vector(ST_TSF_SIZE-1 downto 0);
 
@@ -289,24 +352,41 @@ begin
 
   s_sample_mem_en <= i_reset_n;
 
+  TS_GEN : TIMESTAMP_GEN
+  generic map (c_ts_clock_div)
+  port map (
+    i_clk           => i_clk,
+    i_reset_n       => i_reset_n,
+    i_play_stop_n   => s_play_pause_n,
+    i_restart       => s_restart,
+    o_ts_fraction   => s_ts_fraction,
+    o_ts_seconds    => s_ts_seconds
+  );
+
   CORE : SEQUENCER_CORE
   port map(
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
-    i_btn_left      => i_btn_left,
-    i_btn_up        => i_btn_up,
-    i_btn_down      => i_btn_down,
-    i_btn_right     => i_btn_right,
+    i_btn_l_l       => s_btn_l_l,
+    i_btn_l_s       => s_btn_l_s,
+    i_btn_u_l       => s_btn_u_l,
+    i_btn_u_s       => s_btn_u_s,
+    i_btn_d_l       => s_btn_d_l,
+    i_btn_d_s       => s_btn_d_s,
+    i_btn_r_l       => s_btn_r_l,
+    i_btn_r_s       => s_btn_r_s,
     i_tr_mute       => i_tr_mute,
+    i_ts_seconds    => s_ts_seconds,
+    i_ts_fraction   => s_ts_fraction,
     i_midi_ready    => s_midi_ready,
     i_midi_data     => s_midi_data,
     i_rec_data      => s_rec_mem_out,
     o_rec_mem_add   => s_rec_mem_add,
     o_rec_mem_wr    => s_rec_mem_wr_en,
     o_rec_mem_mux   => s_mem_wr_mux,
-    o_ts_seconds    => s_ts_seconds,
-    o_ts_fraction   => s_ts_fraction,
     o_sound_on      => s_sound_on,
+    o_restart       => s_restart,
+    o_play_pause_n  => s_play_pause_n,
     o_sg_patch      => s_sg_patch,
     o_sg_note       => s_sg_note,
     o_sg_vel        => s_sg_vel,
@@ -434,6 +514,61 @@ begin
       port map(s_display(i), o_display_a(i));
   end generate;
 
+  BTN_UP : SL_BUTTON
+  generic map (
+    g_size        => c_btn_size,
+    g_short       => c_btn_short,
+    g_long        => c_btn_long
+  )
+  port map (
+    i_clk         => i_clk,
+    i_reset_n     => i_reset_n,
+    i_btn         => i_btn_up,
+    o_long        => s_btn_u_l,
+    o_short       => s_btn_u_s
+  );
+
+  BTN_DOWN : SL_BUTTON
+  generic map (
+    g_size        => c_btn_size,
+    g_short       => c_btn_short,
+    g_long        => c_btn_long
+  )
+  port map (
+    i_clk         => i_clk,
+    i_reset_n     => i_reset_n,
+    i_btn         => i_btn_down,
+    o_long        => s_btn_d_l,
+    o_short       => s_btn_d_s
+  );
+
+  BTN_LEFT : SL_BUTTON
+  generic map (
+    g_size        => c_btn_size,
+    g_short       => c_btn_short,
+    g_long        => c_btn_long
+  )
+  port map (
+    i_clk         => i_clk,
+    i_reset_n     => i_reset_n,
+    i_btn         => i_btn_left,
+    o_long        => s_btn_l_l,
+    o_short       => s_btn_l_s
+  );
+
+  BTN_RIGTH : SL_BUTTON
+  generic map (
+    g_size        => c_btn_size,
+    g_short       => c_btn_short,
+    g_long        => c_btn_long
+  )
+  port map (
+    i_clk         => i_clk,
+    i_reset_n     => i_reset_n,
+    i_btn         => i_btn_right,
+    o_long        => s_btn_r_l,
+    o_short       => s_btn_r_s
+  );
 
   p_mem_wr_mux: process(s_mem_wr_mux, s_midi_data, s_ts_fraction, s_ts_seconds)
   begin
