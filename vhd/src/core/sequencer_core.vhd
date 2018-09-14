@@ -508,15 +508,20 @@ begin
     );
   end generate;
 
-  p_sound_evt_in_mux: process(s_active_tr, i_midi_ready, i_midi_data, i_pb_ready, i_pb_data)
+  p_sound_evt_in_mux: process(s_active_tr, i_midi_ready, i_midi_data, i_pb_ready, i_pb_data, s_tr_mute)
   begin
     for i in 0 to SEQ_TRACKS - 1 loop
-      if to_integer(s_active_tr) = i then
-        s_evt_ready(i)  <= i_midi_ready;
-        s_evt_data(i)   <= i_midi_data;
+      if s_tr_mute(i) = '1' then
+        if to_integer(s_active_tr) = i then
+          s_evt_ready(i)  <= i_midi_ready;
+          s_evt_data(i)   <= i_midi_data;
+        else
+          s_evt_ready(i)  <= i_pb_ready(i);
+          s_evt_data(i)   <= i_pb_data(i);
+        end if;
       else
-        s_evt_ready(i)  <= i_pb_ready(i);
-        s_evt_data(i)   <= i_pb_data(i);
+        s_evt_ready(i)  <= '0';
+        s_evt_data(i)   <= (others => '0');
       end if;
     end loop;
   end process;
