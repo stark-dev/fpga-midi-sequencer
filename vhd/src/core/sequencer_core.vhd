@@ -38,9 +38,11 @@ port (
 
   -- outputs
   o_sound_on      : out std_logic;
+  o_main_vol      : out natural range 0 to MAIN_VOL_MAX;
   o_restart       : out std_logic;
   o_play_pause_n  : out std_logic;
   o_sg_patch      : out t_sg_patch;
+  o_sg_vol        : out t_sg_vol;
   o_sg_note       : out t_sg_note;
   o_sg_vel        : out t_sg_vel;
   o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -268,14 +270,16 @@ begin
   -- output assignment
   o_display_a       <= s_display_array;
   o_sound_on        <= s_sound_on;
+  o_main_vol        <= s_main_vol;
   o_restart         <= s_restart;
   o_play_pause_n    <= s_play_pause_n;
 
-  p_poly_patch_assign: process(s_tr_status)
+  p_poly_patch_vol_assign: process(s_tr_status)
   begin
     for i in 0 to SEQ_TRACKS - 1 loop
       o_sg_poly(i)  <= s_tr_status(i)(TR_POLY_BIT);
       o_sg_patch(i) <= s_tr_status(i)(TR_PATCH_RANGE);
+      o_sg_vol(i)   <= s_tr_status(i)(TR_VOL_RANGE);
     end loop;
   end process;
 

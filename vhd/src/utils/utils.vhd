@@ -96,6 +96,7 @@ package UTILS_PKG is
   type t_midi_ts        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_TIME_SIZE - 1  downto 0);
 
   type t_sg_patch       is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
+  type t_sg_vol         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(TR_VOL_SIZE - 1 downto 0);
   type t_sg_note        is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_NOTE_SIZE - 1 downto 0);
   type t_sg_vel         is array (SEQ_TRACKS - 1 downto 0) of std_logic_vector(SEQ_VEL_SIZE - 1 downto 0);
 

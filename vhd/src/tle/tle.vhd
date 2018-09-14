@@ -71,9 +71,11 @@ architecture STRUCT of TLE is
 
     -- outputs
     o_sound_on      : out std_logic;
+    o_main_vol      : out natural range 0 to MAIN_VOL_MAX;
     o_restart       : out std_logic;
     o_play_pause_n  : out std_logic;
     o_sg_patch      : out t_sg_patch;
+    o_sg_vol        : out t_sg_vol;
     o_sg_note       : out t_sg_note;
     o_sg_vel        : out t_sg_vel;
     o_sg_start      : out std_logic_vector(SEQ_TRACKS - 1 downto 0);
@@ -175,6 +177,7 @@ port (
 
   i_sound_on      : in  std_logic;
   i_patch         : in  t_sg_patch;
+  i_vol           : in  t_sg_vol;
 
   i_sample_clk    : in  std_logic;        -- clock @ sample freq speed
   i_sample_en     : in  t_sample_enable;  -- array of enable signals
@@ -315,6 +318,7 @@ end component;
   signal s_sample_clk   : std_logic;
 
   -- sound gen
+  signal s_main_vol     : natural range 0 to MAIN_VOL_MAX;
   signal s_sound_on     : std_logic;
   signal s_sg_note      : t_sg_note;
   signal s_sg_vel       : t_sg_vel;
@@ -324,6 +328,7 @@ end component;
 
   -- sound synth
   signal s_sg_patch       : t_sg_patch;
+  signal s_sg_vol         : t_sg_vol;
   signal s_sample_enable  : t_sample_enable;
   signal s_sample_index   : t_sample_idx;
 
@@ -385,9 +390,11 @@ begin
     o_rec_mem_wr    => s_rec_mem_wr_en,
     o_rec_mem_mux   => s_mem_wr_mux,
     o_sound_on      => s_sound_on,
+    o_main_vol      => s_main_vol,
     o_restart       => s_restart,
     o_play_pause_n  => s_play_pause_n,
     o_sg_patch      => s_sg_patch,
+    o_sg_vol        => s_sg_vol,
     o_sg_note       => s_sg_note,
     o_sg_vel        => s_sg_vel,
     o_sg_start      => s_sg_start,
@@ -441,6 +448,7 @@ begin
 
     i_sound_on      => s_sound_on,
     i_patch         => s_sg_patch,
+    i_vol           => s_sg_vol,
 
     i_sample_clk    => s_sample_clk,
     i_sample_en     => s_sample_enable,

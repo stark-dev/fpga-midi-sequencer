@@ -12,6 +12,7 @@ port (
 
   i_sound_on      : in  std_logic;
   i_patch         : in  t_sg_patch;
+  i_vol           : in  t_sg_vol;
 
   i_sample_clk    : in  std_logic;        -- clock @ sample freq speed
   i_sample_en     : in  t_sample_enable;  -- array of enable signals
