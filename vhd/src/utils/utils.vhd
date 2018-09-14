@@ -33,7 +33,7 @@ package UTILS_PKG is
   constant TR_ST_SIZE     : natural := 32;
   constant TR_PATCH_SIZE  : natural := 7;
   constant TR_CH_SIZE     : natural := 4;
-  constant TR_VOL_SIZE    : natural := 7;
+  constant TR_VOL_SIZE    : natural := 3;
   constant TR_PAN_SIZE    : natural := 7;
 
   -- display constants
@@ -128,7 +128,8 @@ package UTILS_PKG is
   -- track status register fields
   subtype  TR_PATCH_RANGE is natural range 6 downto 0;
   subtype  TR_CH_RANGE    is natural range 10 downto 7;
-  subtype  TR_VOL_RANGE   is natural range 17 downto 11;
+  subtype  TR_VOL_RANGE   is natural range 13 downto 11;
+  subtype  TR_RES_RANGE   is natural range 17 downto 14;
   subtype  TR_PAN_RANGE   is natural range 24 downto 18;
   constant TR_MONO_BIT    : natural := 25;
   constant TR_SOLO_BIT    : natural := 26;

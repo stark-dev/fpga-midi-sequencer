@@ -119,7 +119,7 @@ begin
           when op_patch     =>
             s_disp_1_4_in <= '0' & i_track_patch(6 downto 4);
           when op_track_vol =>
-            s_disp_1_4_in <= '0' & i_track_vol(6 downto 4);
+            s_disp_1_4_in <= '0' & i_track_vol;
           when op_pan       =>
             s_disp_1_4_in <= '0' & i_track_pan(6 downto 4);
           when others       =>
@@ -138,7 +138,7 @@ begin
           when op_patch     =>
             s_disp_0_4_in <= i_track_patch(3 downto 0);
           when op_track_vol =>
-            s_disp_0_4_in <= i_track_vol(3 downto 0);
+            s_disp_0_4_in <= '0' & i_track_vol;
           when op_pan       =>
             s_disp_0_4_in <= i_track_pan(3 downto 0);
           when others       =>

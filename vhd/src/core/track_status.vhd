@@ -91,6 +91,7 @@ begin
   o_track_status(TR_PATCH_RANGE)  <= std_logic_vector(s_patch_number);
   o_track_status(TR_CH_RANGE)     <= std_logic_vector(s_ch_number);
   o_track_status(TR_VOL_RANGE)    <= std_logic_vector(s_volume);
+  o_track_status(TR_RES_RANGE)    <= (others => '0');
   o_track_status(TR_PAN_RANGE)    <= std_logic_vector(s_pan);
   o_track_status(TR_MONO_BIT)     <= s_mute;
   o_track_status(TR_SOLO_BIT)     <= s_solo;
