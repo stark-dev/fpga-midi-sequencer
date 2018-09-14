@@ -152,6 +152,8 @@ begin
   p_display_5_control: process(i_state, i_menu, i_track_rec)
   begin
     case i_state is
+      when st_reset   =>
+        s_display_array(5)  <= ds_H;
       when st_idle    =>
         if i_track_rec = '0' then
           s_display_array(5)  <= ds_P;
@@ -187,6 +189,8 @@ begin
   p_display_4_control: process(i_state, i_menu, s_disp_4_4)
   begin
     case i_state is
+      when st_reset   =>
+        s_display_array(4)  <= ds_E;
       when st_play    =>
         s_display_array(4)  <= s_disp_4_4;
       when st_rec     =>
@@ -216,6 +220,8 @@ begin
   p_display_3_control: process(i_state, i_menu, s_disp_3_4)
   begin
     case i_state is
+      when st_reset   =>
+        s_display_array(3)  <= ds_L;
       when st_idle    =>
         s_display_array(3)  <= ds_V;
       when st_play    =>
@@ -247,6 +253,8 @@ begin
   p_display_2_control: process(i_state, i_menu, s_disp_2_3)
   begin
     case i_state is
+      when st_reset   =>
+        s_display_array(2)  <= ds_L;
       when st_idle    =>
         s_display_array(2)  <= s_disp_2_3;
       when st_play    =>
@@ -278,6 +286,8 @@ begin
   p_display_1_control: process(i_state, i_menu, s_disp_1_4)
   begin
     case i_state is
+      when st_reset   =>
+        s_display_array(1)  <= ds_O;
       when st_idle    =>
         s_display_array(1)  <= ds_T;
       when st_play    =>
