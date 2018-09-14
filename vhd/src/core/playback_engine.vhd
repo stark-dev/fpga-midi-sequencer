@@ -64,9 +64,11 @@ begin
       when st_data    =>
         case i_evt_data(SEQ_TYPE_RANGE) is
           when "000"  => -- note off
+            o_sg_start <= '0';
             o_sg_stop  <= '1';
           when "001"  => -- note on
             o_sg_start  <= '1';
+            o_sg_stop   <= '0';
           when others => -- nothing
             o_sg_start <= '0';
             o_sg_stop  <= '0';
