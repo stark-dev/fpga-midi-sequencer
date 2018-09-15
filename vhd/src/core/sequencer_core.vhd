@@ -409,7 +409,7 @@ begin
   EVT_MNGR : EVENT_MANAGER
   port map(
     i_clk           => i_clk,
-    i_reset_n       => i_reset_n,
+    i_reset_n       => s_data_reload,
 
     i_rec_mode      => s_rec_mode,
     i_ts_seconds    => i_ts_seconds,
