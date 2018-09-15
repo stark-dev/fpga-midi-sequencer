@@ -303,8 +303,8 @@ begin
   -- buttons
   s_tr_toggle_rec   <= i_btn_r_s when (s_fsm_status = st_idle) else '0';
 
-  s_vol_up          <= i_btn_u_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
-  s_vol_down        <= i_btn_d_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) else '0';
+  s_vol_up          <= i_btn_u_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) or (s_fsm_status = st_rec) else '0';
+  s_vol_down        <= i_btn_d_s when (s_fsm_status = st_idle) or (s_fsm_status = st_play) or (s_fsm_status = st_rec) else '0';
 
   s_menu_op_toggle  <= i_btn_r_s when (s_fsm_status = st_menu) else '0';
 
