@@ -179,6 +179,8 @@ port (
   i_patch         : in  t_sg_patch;
   i_vol           : in  t_sg_vol;
 
+  i_main_vol      : in  natural range 0 to MAIN_VOL_MAX;
+
   i_sample_clk    : in  std_logic;        -- clock @ sample freq speed
   i_sample_en     : in  t_sample_enable;  -- array of enable signals
   i_sample_idx    : in  t_sample_idx;     -- array of sample indexes
@@ -449,6 +451,8 @@ begin
     i_sound_on      => s_sound_on,
     i_patch         => s_sg_patch,
     i_vol           => s_sg_vol,
+
+    i_main_vol      => s_main_vol,
 
     i_sample_clk    => s_sample_clk,
     i_sample_en     => s_sample_enable,
