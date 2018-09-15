@@ -120,22 +120,22 @@ begin
 
   s_out_sample_in <= s_current_sample(SAMPLE_WIDTH - 1 downto 0);
 
-  -- p_mem_sample_ext: process(i_mem_sample, i_vol, s_track_scan)
-  --   variable v_track  : integer := 0;
-  --   variable v_vol    : integer := 0;
-  -- begin
-  --   v_track := to_integer(s_track_scan);
-  --   v_vol   := to_integer(unsigned(i_vol(v_track)));
-  --   if v_vol = 0 then
-  --     s_mem_sample_ext <= (others => '0');
-  --   else
-      -- s_mem_sample_ext(2*SAMPLE_WIDTH -1 downto SAMPLE_WIDTH - (TR_VOL_MAX - v_vol))  <= (others => i_mem_sample(SAMPLE_WIDTH - 1));
-      -- s_mem_sample_ext(SAMPLE_WIDTH - (TR_VOL_MAX - v_vol) - 1 downto 0)              <= i_mem_sample(TR_VOL_MAX downto (TR_VOL_MAX - v_vol));
-  --   end if;
-  -- end process;
+  p_mem_sample_ext: process(i_mem_sample, i_vol, s_track_scan)
+    variable v_track  : integer := 0;
+    variable v_vol    : integer := 0;
+  begin
+    v_track := to_integer(s_track_scan);
+    v_vol   := to_integer(unsigned(i_vol(v_track)));
+    if v_vol = 0 then
+      s_mem_sample_ext <= (others => '0');
+    else
+      s_mem_sample_ext(2*SAMPLE_WIDTH -1 downto SAMPLE_WIDTH - (TR_VOL_MAX - v_vol))  <= (others => i_mem_sample(SAMPLE_WIDTH - 1));
+      s_mem_sample_ext(SAMPLE_WIDTH - (TR_VOL_MAX - v_vol) - 1 downto 0)              <= i_mem_sample(TR_VOL_MAX downto (TR_VOL_MAX - v_vol));
+    end if;
+  end process;
 
-  s_mem_sample_ext(2*SAMPLE_WIDTH - 1 downto SAMPLE_WIDTH) <= (others => i_mem_sample(SAMPLE_WIDTH - 1));
-  s_mem_sample_ext(SAMPLE_WIDTH - 1 downto 0) <= i_mem_sample;
+  -- s_mem_sample_ext(2*SAMPLE_WIDTH - 1 downto SAMPLE_WIDTH) <= (others => i_mem_sample(SAMPLE_WIDTH - 1));
+  -- s_mem_sample_ext(SAMPLE_WIDTH - 1 downto 0) <= i_mem_sample;
 
   s_sample_offset     <= std_logic_vector(to_unsigned(2**(SAMPLE_WIDTH - 1), 2*SAMPLE_WIDTH));
   s_current_sample_in <= std_logic_vector(signed(s_current_sample) + signed(s_mem_sample_ext) + signed(s_sample_offset));
