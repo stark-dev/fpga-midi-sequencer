@@ -4,4 +4,3 @@ vcom vhd/src/core/track_status.vhd
 vcom vhd/src/core/playback_engine.vhd
 vcom vhd/src/core/event_manager.vhd
 vcom vhd/src/core/sequencer_core.vhd
-vcom vhd/tb/tb_core.vhd
