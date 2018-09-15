@@ -25,7 +25,7 @@ add wave DUT/CORE/s_menu_option
 add wave DUT/CORE/s_rec_mode
 add wave DUT/CORE/s_play_pause_n
 add wave DUT/CORE/s_main_vol
-add wave DUT/CORE/s_active_tr
+add wave -unsigned DUT/CORE/s_active_tr
 add wave -unsigned DUT/s_ts_seconds
 add wave -unsigned DUT/s_ts_fraction
 add wave DUT/CORE/s_play_end
@@ -58,7 +58,7 @@ add wave DUT/CORE/s_track_poly
 add wave DUT/CORE/s_track_rec
 add wave DUT/CORE/s_track_mono
 add wave DUT/CORE/s_track_pan
-add wave DUT/CORE/s_track_vol
+add wave -unsigned DUT/CORE/s_track_vol
 add wave DUT/CORE/s_track_patch
 add wave -divider
 
