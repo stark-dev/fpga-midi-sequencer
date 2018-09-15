@@ -226,7 +226,6 @@ component SAMPLE_MANAGER is
 	);
 	port (
 		i_clk					: in  std_logic;
-		i_enable  		: in  std_logic;
 		i_patch				: in	std_logic_vector(g_patch_width - 1 downto 0);
 		i_address			: in  std_logic_vector(g_mem_size - 1 downto 0);
 		o_mem_out			: out std_logic_vector(g_sample_width - 1 downto 0)
@@ -343,7 +342,6 @@ end component;
   signal s_mem_wr_mux_in  : std_logic_vector(SEQ_EVENT_SIZE - 1 downto 0);
 
   -- sample memory
-  signal s_sample_mem_en    : std_logic;
   signal s_sample_mem_patch : std_logic_vector(TR_PATCH_SIZE - 1 downto 0);
   signal s_sample_mem_add   : std_logic_vector(SMP_MEM_SIZE - 1 downto 0);
   signal s_sample_mem_out   : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
@@ -356,8 +354,6 @@ begin
 
   o_dac_out       <= s_dac_out;
   o_clip          <= s_clip;
-
-  s_sample_mem_en <= i_reset_n;
 
   TS_GEN : TIMESTAMP_GEN
   generic map (c_ts_clock_div)
@@ -500,7 +496,6 @@ begin
 	)
 	port map (
 		i_clk					=> i_clk,
-		i_enable  		=> s_sample_mem_en,
 		i_patch			  => s_sample_mem_patch,
 		i_address			=> s_sample_mem_add,
 		o_mem_out			=> s_sample_mem_out

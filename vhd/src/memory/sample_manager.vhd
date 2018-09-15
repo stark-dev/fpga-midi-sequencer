@@ -13,7 +13,6 @@ entity SAMPLE_MANAGER is
 	);
 	port (
 		i_clk					: in  std_logic;
-		i_enable  		: in  std_logic;
 		i_patch				: in	std_logic_vector(g_patch_width - 1 downto 0);
 		i_address			: in  std_logic_vector(g_mem_size - 1 downto 0);
 		o_mem_out			: out std_logic_vector(g_sample_width - 1 downto 0)
@@ -24,6 +23,15 @@ architecture BHV of SAMPLE_MANAGER is
 
 	component sine_sample_rom
 		port
+		(
+			address		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
+			clock		: IN STD_LOGIC  := '1';
+			q		: OUT STD_LOGIC_VECTOR (7 DOWNTO 0)
+		);
+	end component;
+
+	component square_sample_rom
+		PORT
 		(
 			address		: IN STD_LOGIC_VECTOR (15 DOWNTO 0);
 			clock		: IN STD_LOGIC  := '1';
@@ -43,22 +51,23 @@ begin
 			q		      => s_sine_out
 		);
 
-	o_mem_out <= s_sine_out;
+	square_samples: square_sample_rom
+	port map (
+			address		=> i_address,
+			clock		  => i_clk,
+			q		      => s_square_out
+		);
 
-	-- p_mem_out: process(i_enable, i_address, s_sine_out, s_square_out)
-	-- begin
-	-- 	if i_enable = '1' then
-	-- 		case (to_integer(unsigned(i_patch))) is
-	-- 			when 0      => -- sine mem
-	-- 				o_mem_out <= s_sine_out;
-	-- 			when 1      => --square mem
-	-- 				o_mem_out <= s_square_out;
-	-- 			when others =>
-	-- 				o_mem_out 		<= (others => '0');
-	-- 		end case;
-	-- 	else
-	-- 		o_mem_out 		<= (others => '0');
-	-- 	end if;
-	-- end process;
+	p_mem_out: process(i_address, i_patch, s_sine_out, s_square_out)
+	begin
+		case (to_integer(unsigned(i_patch))) is
+			when 0      => -- sine mem
+				o_mem_out <= s_sine_out;
+			when 1      => --square mem
+				o_mem_out <= s_square_out;
+			when others =>
+				o_mem_out 		<= (others => '0');
+		end case;
+	end process;
 
 end architecture;
