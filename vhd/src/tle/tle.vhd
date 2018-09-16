@@ -365,12 +365,25 @@ end component nios_system;
   signal s_dac_out_r      : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
   signal s_clip           : std_logic;
 
+  -- pwm output
+  signal s_pwm            : std_logic_vector(1 downto 0);
+
 begin
 
   o_dac_out_l     <= s_dac_out_l;
   o_dac_out_r     <= s_dac_out_r;
 
   o_clip          <= s_clip;
+
+  o_pwm           <= s_pwm(0);
+  o_pwm_n         <= s_pwm(1);
+
+  NIOS : nios_system
+	port map (
+		clk_clk        => i_clk,
+		reset_reset_n  => i_reset_n,
+		pwm_out_export => s_pwm
+	);
 
   TS_GEN : TIMESTAMP_GEN
   generic map (c_ts_clock_div)
