@@ -34,7 +34,11 @@ architecture TEST of TB_TLE is
       -- DAC
       o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
       o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
-      o_clip          : out std_logic
+      o_clip          : out std_logic;
+
+      -- PWM out
+      o_pwm           : out std_logic;
+      o_pwm_n         : out std_logic
     );
   end component;
 
@@ -96,6 +100,10 @@ architecture TEST of TB_TLE is
   signal s_tx_data_out  : std_logic;
   signal s_uart_tx_end  : std_logic;
 
+  -- pwm signals
+  signal s_pwm          : std_logic;
+  signal s_pwm_n        : std_logic;
+
 begin
 
   DUT : TLE
@@ -111,7 +119,9 @@ begin
     o_display_a     => s_display,
     o_dac_out_l     => s_dac_out_l,
     o_dac_out_r     => s_dac_out_r,
-    o_clip          => s_clip
+    o_clip          => s_clip,
+    o_pwm           => s_pwm,
+    o_pwm_n         => s_pwm_n
   );
 
   TX: UART_TX

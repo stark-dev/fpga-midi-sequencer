@@ -14,7 +14,7 @@
 
 # Quartus II 64-Bit Version 13.1.0 Build 162 10/23/2013 SJ Web Edition
 # File: C:\Users\Mauro\Developer\Workspace\Quartus\midi-sequencer\pin_assignment_de1_soc.csv
-# Generated on: Sun Sep 16 13:27:41 2018
+# Generated on: Sun Sep 16 21:54:57 2018
 
 # Note: The column header names should not be changed if you wish to import this .csv file into the Quartus II software.
 
@@ -99,3 +99,5 @@ o_display_a[5][3],Output,PIN_AB27,5B,B5B_N0,,,,,,,,,,,,,
 o_display_a[5][4],Output,PIN_AB26,5A,B5A_N0,,,,,,,,,,,,,
 o_display_a[5][5],Output,PIN_AA26,5B,B5B_N0,,,,,,,,,,,,,
 o_display_a[5][6],Output,PIN_AA25,5A,B5A_N0,,,,,,,,,,,,,
+o_pwm,Output,PIN_AC23,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_pwm_n,Output,PIN_AE23,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,

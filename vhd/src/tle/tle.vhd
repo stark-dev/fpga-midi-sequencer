@@ -33,7 +33,11 @@ entity TLE is
     -- DAC
     o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
     o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
-    o_clip          : out std_logic
+    o_clip          : out std_logic;
+
+    -- PWM out
+    o_pwm           : out std_logic;
+    o_pwm_n         : out std_logic
   );
 end TLE;
 
@@ -266,6 +270,14 @@ component rec_memory IS
 		q		: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
 	);
 end component;
+
+component nios_system is
+	port (
+		clk_clk        : in  std_logic                    := '0'; --     clk.clk
+		reset_reset_n  : in  std_logic                    := '0'; --   reset.reset_n
+		pwm_out_export : out std_logic_vector(1 downto 0)         -- pwm_out.export
+	);
+end component nios_system;
 
   -- real
   constant c_btn_size     : integer := 32;
