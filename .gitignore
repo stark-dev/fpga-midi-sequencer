@@ -13,6 +13,13 @@ greybox_tmp
 
 # qsys
 .qsys_edit
+*.rpt
+*.bsf
+*.html
+*.sopcinfo
+*.tcl*
+*.cmp
+nios_system/*
 
 # modelsim working dir
 work
