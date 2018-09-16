@@ -11,6 +11,8 @@ output_files
 c5_pin_model_dump.txt
 greybox_tmp
 
+# qsys
+.qsys_edit
 
 # modelsim working dir
 work
