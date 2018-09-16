@@ -1,5 +1,4 @@
 # quartus files
-*.sof
 db
 incremental_db
 hc_output
@@ -20,6 +19,9 @@ greybox_tmp
 *.tcl*
 *.cmp
 nios_system/*
+
+# nios software folder
+software/*
 
 # modelsim working dir
 work
