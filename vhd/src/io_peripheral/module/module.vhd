@@ -71,9 +71,9 @@ begin
   p_pwm: process(s_cnt_out, s_duty_cycle)
   begin
     if s_cnt_out < s_duty_cycle then
-      s_pwm <= '0';
-    else
       s_pwm <= '1';
+    else
+      s_pwm <= '0';
     end if;
   end process;
 
