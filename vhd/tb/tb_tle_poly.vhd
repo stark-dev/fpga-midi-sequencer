@@ -32,7 +32,8 @@ architecture TEST of TB_TLE is
       o_display_a     : out t_display_if;
 
       -- DAC
-      o_dac_out       : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+      o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+      o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
       o_clip          : out std_logic
     );
   end component;
@@ -84,8 +85,9 @@ architecture TEST of TB_TLE is
 
   signal s_display  : t_display_if;
 
-  signal s_dac_out  : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
-  signal s_clip     : std_logic;
+  signal s_dac_out_l    : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_dac_out_r    : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_clip         : std_logic;
 
   -- uart tx
   signal s_uart_en      : std_logic;
@@ -107,7 +109,8 @@ begin
     i_tr_mute       => s_tr_mute,
     i_midi_in       => s_tx_data_out,
     o_display_a     => s_display,
-    o_dac_out       => s_dac_out,
+    o_dac_out_l     => s_dac_out_l,
+    o_dac_out_r     => s_dac_out_r,
     o_clip          => s_clip
   );
 

@@ -31,7 +31,8 @@ entity TLE is
     o_display_a     : out t_display_if;
 
     -- DAC
-    o_dac_out       : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+    o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+    o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
     o_clip          : out std_logic
   );
 end TLE;
@@ -190,7 +191,8 @@ port (
   i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
 
   o_clip          : out std_logic;  -- clip indicator
-  o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
+  o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
 );
 end component;
 
@@ -347,12 +349,15 @@ end component;
   signal s_sample_mem_out   : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
 
   -- sample out
-  signal s_dac_out        : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_dac_out_l      : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  signal s_dac_out_r      : std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
   signal s_clip           : std_logic;
 
 begin
 
-  o_dac_out       <= s_dac_out;
+  o_dac_out_l     <= s_dac_out_l;
+  o_dac_out_r     <= s_dac_out_r;
+
   o_clip          <= s_clip;
 
   TS_GEN : TIMESTAMP_GEN
@@ -459,7 +464,8 @@ begin
     i_mem_sample    => s_sample_mem_out,
 
     o_clip          => s_clip,
-    o_sample_out    => s_dac_out
+    o_dac_out_l     => s_dac_out_l,
+    o_dac_out_r     => s_dac_out_r
   );
 
   SOUND_GEN_GENERATE:

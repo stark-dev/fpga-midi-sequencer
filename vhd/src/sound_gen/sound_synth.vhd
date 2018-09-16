@@ -25,7 +25,8 @@ port (
   i_mem_sample    : in  std_logic_vector(SAMPLE_WIDTH - 1 downto 0);  -- sample from memory
 
   o_clip          : out std_logic;  -- clip indicator
-  o_sample_out    : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
+  o_dac_out_l     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0);
+  o_dac_out_r     : out std_logic_vector(SAMPLE_WIDTH - 1 downto 0)
 );
 end entity;
 
@@ -116,8 +117,11 @@ architecture BHV of SOUND_SYNTH is
 
 begin
 
+  o_dac_out_l       <= s_out_sample;
+  o_dac_out_r       <= s_out_sample;
+
   o_clip            <= s_clip;
-  o_sample_out      <= s_out_sample;
+
   o_mem_patch       <= i_patch(to_integer(s_track_scan));
   o_mem_address     <= i_sample_idx(to_integer(s_track_scan))(to_integer(s_sample_scan));
 
