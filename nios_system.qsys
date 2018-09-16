@@ -16,7 +16,7 @@
    {
       datum baseAddress
       {
-         value = "69648";
+         value = "69664";
          type = "String";
       }
    }
@@ -25,6 +25,14 @@
       datum _sortIndex
       {
          value = "0";
+         type = "int";
+      }
+   }
+   element gpio_bank
+   {
+      datum _sortIndex
+      {
+         value = "5";
          type = "int";
       }
    }
@@ -72,7 +80,7 @@
    {
       datum baseAddress
       {
-         value = "69632";
+         value = "69648";
          type = "String";
       }
    }
@@ -86,6 +94,14 @@
       datum baseAddress
       {
          value = "0";
+         type = "String";
+      }
+   }
+   element gpio_bank.s1
+   {
+      datum baseAddress
+      {
+         value = "69632";
          type = "String";
       }
    }
@@ -112,6 +128,11 @@
  <interface
    name="pwm_out"
    internal="pwm_controller_0.pwm_out"
+   type="conduit"
+   dir="end" />
+ <interface
+   name="gpio_bank"
+   internal="gpio_bank.external_connection"
    type="conduit"
    dir="end" />
  <module kind="clock_source" version="13.1" enabled="1" name="clk_0">
@@ -235,7 +256,7 @@
   <parameter name="tightlyCoupledInstructionMaster2AddrWidth" value="1" />
   <parameter name="tightlyCoupledInstructionMaster3AddrWidth" value="1" />
   <parameter name="instSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0xA000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x10800' end='0x11000' /></address-map>]]></parameter>
-  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0xA000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x10800' end='0x11000' /><slave name='pwm_controller_0.pwm_controller_slave' start='0x11000' end='0x11010' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x11010' end='0x11018' /></address-map>]]></parameter>
+  <parameter name="dataSlaveMapParam"><![CDATA[<address-map><slave name='onchip_memory2_0.s1' start='0x0' end='0xA000' /><slave name='nios2_qsys_0.jtag_debug_module' start='0x10800' end='0x11000' /><slave name='gpio_bank.s1' start='0x11000' end='0x11010' /><slave name='pwm_controller_0.pwm_controller_slave' start='0x11010' end='0x11020' /><slave name='jtag_uart_0.avalon_jtag_slave' start='0x11020' end='0x11028' /></address-map>]]></parameter>
   <parameter name="clockFrequency" value="50000000" />
   <parameter name="deviceFamilyName" value="Cyclone V" />
   <parameter name="internalIrqMaskSystemInfo" value="32" />
@@ -299,7 +320,23 @@
    kind="pwm_controller"
    version="0.1"
    enabled="1"
-   name="pwm_controller_0" />
+   name="pwm_controller_0">
+  <parameter name="AUTO_CLK_CLOCK_RATE" value="50000000" />
+ </module>
+ <module kind="altera_avalon_pio" version="13.1" enabled="1" name="gpio_bank">
+  <parameter name="bitClearingEdgeCapReg" value="false" />
+  <parameter name="bitModifyingOutReg" value="false" />
+  <parameter name="captureEdge" value="false" />
+  <parameter name="direction" value="Output" />
+  <parameter name="edgeType" value="RISING" />
+  <parameter name="generateIRQ" value="false" />
+  <parameter name="irqType" value="LEVEL" />
+  <parameter name="resetValue" value="0" />
+  <parameter name="simDoTestBenchWiring" value="false" />
+  <parameter name="simDrivenValue" value="0" />
+  <parameter name="width" value="8" />
+  <parameter name="clockRate" value="50000000" />
+ </module>
  <connection
    kind="avalon"
    version="13.1"
@@ -379,7 +416,7 @@
    start="nios2_qsys_0.data_master"
    end="jtag_uart_0.avalon_jtag_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00011010" />
+  <parameter name="baseAddress" value="0x00011020" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -405,7 +442,7 @@
    start="nios2_qsys_0.data_master"
    end="pwm_controller_0.pwm_controller_slave">
   <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x00011000" />
+  <parameter name="baseAddress" value="0x00011010" />
   <parameter name="defaultConnection" value="false" />
  </connection>
  <connection
@@ -413,6 +450,26 @@
    version="13.1"
    start="nios2_qsys_0.jtag_debug_module_reset"
    end="pwm_controller_0.reset_n" />
+ <connection kind="clock" version="13.1" start="clk_0.clk" end="gpio_bank.clk" />
+ <connection
+   kind="reset"
+   version="13.1"
+   start="clk_0.clk_reset"
+   end="gpio_bank.reset" />
+ <connection
+   kind="reset"
+   version="13.1"
+   start="nios2_qsys_0.jtag_debug_module_reset"
+   end="gpio_bank.reset" />
+ <connection
+   kind="avalon"
+   version="13.1"
+   start="nios2_qsys_0.data_master"
+   end="gpio_bank.s1">
+  <parameter name="arbitrationPriority" value="1" />
+  <parameter name="baseAddress" value="0x00011000" />
+  <parameter name="defaultConnection" value="false" />
+ </connection>
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="false" />
