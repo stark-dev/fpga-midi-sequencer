@@ -1,0 +1,2 @@
+vcom vhd/src/io_peripheral/io_top.vhd
+vcom vhd/src/io_peripheral/module/module.vhd
