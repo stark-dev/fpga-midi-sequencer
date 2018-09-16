@@ -58,7 +58,7 @@ begin
     end if;
   end process;
 
-  led_driver: module
+  pwm_controller: module
   port map (
     i_clk           => i_clk,
     i_reset_n       => i_reset_n,
