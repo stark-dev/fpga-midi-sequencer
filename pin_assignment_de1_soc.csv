@@ -14,7 +14,7 @@
 
 # Quartus II 64-Bit Version 13.1.0 Build 162 10/23/2013 SJ Web Edition
 # File: C:\Users\Mauro\Developer\Workspace\Quartus\midi-sequencer\pin_assignment_de1_soc.csv
-# Generated on: Fri Sep 14 01:29:53 2018
+# Generated on: Sun Sep 16 13:27:41 2018
 
 # Note: The column header names should not be changed if you wish to import this .csv file into the Quartus II software.
 
@@ -35,14 +35,22 @@ i_tr_mute[2],Input,PIN_AF9,3A,B3A_N0,,,,,,,,,,,,,
 i_tr_mute[1],Input,PIN_AC12,3A,B3A_N0,,,,,,,,,,,,,
 i_tr_mute[0],Input,PIN_AB12,3A,B3A_N0,,,,,,,,,,,,,
 o_clip,Output,PIN_Y21,5A,B5A_N0,,,,,,,,,,,,,
-o_dac_out[7],Output,PIN_AJ19,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[6],Output,PIN_AK19,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[5],Output,PIN_AK18,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[4],Output,PIN_AK16,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[3],Output,PIN_Y18,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[2],Output,PIN_AD17,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[1],Output,PIN_Y17,4A,B4A_N0,,,,,,,,,,,,,
-o_dac_out[0],Output,PIN_AC18,4A,B4A_N0,,,,,,,,,,,,,
+o_dac_out_l[7],Output,PIN_AJ19,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[6],Output,PIN_AK19,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[5],Output,PIN_AK18,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[4],Output,PIN_AK16,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[3],Output,PIN_Y18,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[2],Output,PIN_AD17,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[1],Output,PIN_Y17,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_l[0],Output,PIN_AC18,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[7],Output,PIN_AA19,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[6],Output,PIN_AA18,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[5],Output,PIN_AG17,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[4],Output,PIN_AF16,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[3],Output,PIN_AE16,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[2],Output,PIN_AG16,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[1],Output,PIN_AH17,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
+o_dac_out_r[0],Output,PIN_AH18,4A,B4A_N0,3.3-V LVTTL,,,,,,,,,,,,
 o_display_a[5],Output,,,,,,,,,,,,,,,,
 o_display_a[4],Output,,,,,,,,,,,,,,,,
 o_display_a[3],Output,,,,,,,,,,,,,,,,
