@@ -273,9 +273,10 @@ end component;
 
 component nios_system is
 	port (
-		clk_clk        : in  std_logic                    := '0'; --     clk.clk
-		reset_reset_n  : in  std_logic                    := '0'; --   reset.reset_n
-		pwm_out_export : out std_logic_vector(1 downto 0)         -- pwm_out.export
+    clk_clk          : in  std_logic                    := '0'; --       clk.clk
+    reset_reset_n    : in  std_logic                    := '0'; --     reset.reset_n
+    pwm_out_export   : out std_logic_vector(1 downto 0);        --   pwm_out.export
+    gpio_bank_export : out std_logic_vector(7 downto 0)         -- gpio_bank.export
 	);
 end component nios_system;
 
@@ -368,6 +369,9 @@ end component nios_system;
   -- pwm output
   signal s_pwm            : std_logic_vector(1 downto 0);
 
+  -- nios gpio
+  signal s_gpio_bank      : std_logic_vector(7 downto 0); -- not assigned
+
 begin
 
   o_dac_out_l     <= s_dac_out_l;
@@ -380,9 +384,10 @@ begin
 
   NIOS : nios_system
 	port map (
-		clk_clk        => i_clk,
-		reset_reset_n  => i_reset_n,
-		pwm_out_export => s_pwm
+		clk_clk           => i_clk,
+		reset_reset_n     => i_reset_n,
+		pwm_out_export    => s_pwm,
+    gpio_bank_export  => s_gpio_bank
 	);
 
   TS_GEN : TIMESTAMP_GEN
