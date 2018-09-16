@@ -11,8 +11,7 @@ port (
   i_write         : in  std_logic;
   i_writedata     : in  std_logic_vector(31 downto 0);
   -- o_readdata      : out std_logic_vector(31 downto 0);
-  o_pwm           : out std_logic;
-  o_pwm_n         : out std_logic
+  o_pwm           : out std_logic_vector(1 downto 0)
 );
 end entity;
 
@@ -67,8 +66,8 @@ begin
     i_start_stop_n  => s_start_stop_n,
     i_div           => i_writedata(12 downto 0),
     i_dc            => i_writedata(12 downto 0),
-    o_pwm           => o_pwm,
-    o_pwm_n         => o_pwm_n
+    o_pwm           => o_pwm(0),
+    o_pwm_n         => o_pwm(1)
   );
 
   end architecture;
