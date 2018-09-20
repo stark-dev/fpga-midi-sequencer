@@ -138,7 +138,7 @@ port map (
     s_dram_dq     <= std_logic_vector(to_unsigned(99, 16));
     s_write       <= '0';
     s_refresh     <= '0';
-    wait for 50 ns;
+    wait for 60 ns;
 
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
@@ -147,7 +147,7 @@ port map (
     s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
-    wait for 10 ns;
+    wait for 40 ns;
 
     -- write
     s_rst         <= '1';
@@ -157,7 +157,7 @@ port map (
     s_dram_dq     <= (others => 'Z');
     s_write       <= '1';
     s_refresh     <= '0';
-    wait for 50 ns;
+    wait for 60 ns;
 
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(0, 25));
