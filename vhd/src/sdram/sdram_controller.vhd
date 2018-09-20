@@ -704,9 +704,12 @@ begin
         s_data_in_r_rst     <= '1';
         s_data_out_r_rst    <= '1';
 
-        if (i_read = '1' or i_write = '1') then
+        if i_write = '1' then
           s_add_in_r_en       <= '1';
           s_data_in_r_en      <= '1';
+        elsif i_read = '1' then
+          s_add_in_r_en       <= '1';
+          s_data_in_r_en      <= '0';
         else
           s_add_in_r_en       <= '0';
           s_data_in_r_en      <= '0';
@@ -907,7 +910,11 @@ begin
 
         s_add_in_r_en       <= '0';
         s_data_in_r_en      <= '0';
-        s_data_out_r_en     <= '1';
+        if i_read = '1' then
+          s_data_out_r_en     <= '1';
+        else
+          s_data_out_r_en     <= '0';
+        end if;
 
         s_init_flag         <= '1';
         s_ready_flag        <= '0';
