@@ -1,0 +1,4 @@
+
+source scripts/vcom_basics.scr
+vcom vhd/src/sdram/sdram_controller.vhd
+vcom vhd/tb/tb_mem_ctrl.vhd

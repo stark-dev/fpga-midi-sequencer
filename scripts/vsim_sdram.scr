@@ -1,0 +1,8 @@
+source scripts/vcom_sdram.scr
+
+vsim -t ps TB_MEM_CTRL
+
+add wave *
+add wave DUT/*
+
+run 100 ns
