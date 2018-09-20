@@ -115,6 +115,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
     wait for 10 ns;
@@ -124,6 +125,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
     wait for 800 ns;
@@ -133,6 +135,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(104, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '1';
+    s_dram_dq     <= std_logic_vector(to_unsigned(99, 16));
     s_write       <= '0';
     s_refresh     <= '0';
     wait for 50 ns;
@@ -141,6 +144,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
     wait for 10 ns;
@@ -150,6 +154,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(212, 25));
     s_i_data      <= std_logic_vector(to_unsigned(120, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '1';
     s_refresh     <= '0';
     wait for 50 ns;
@@ -158,15 +163,17 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
     wait for 100 ns;
 
-    -- write
+    -- refresh
     s_rst         <= '1';
     s_address     <= std_logic_vector(to_unsigned(212, 25));
     s_i_data      <= std_logic_vector(to_unsigned(120, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '1';
     wait for 50 ns;
@@ -175,6 +182,7 @@ port map (
     s_address     <= std_logic_vector(to_unsigned(0, 25));
     s_i_data      <= std_logic_vector(to_unsigned(255, 16));
     s_read        <= '0';
+    s_dram_dq     <= (others => 'Z');
     s_write       <= '0';
     s_refresh     <= '0';
 
